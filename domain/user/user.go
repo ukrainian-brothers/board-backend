@@ -29,11 +29,11 @@ func NewUser(firstName string, sureName string, login string, password string, c
 
 	usr := &User{
 		domain.Person{
-			ID: uuid.New(),
+			ID:        uuid.New(),
 			FirstName: firstName,
-			SureName: sureName,
-			Login: login,
-			Password: &password,
+			Surname:   sureName,
+			Login:     login,
+			Password:  &password,
 		},
 		contactDetails,
 	}
