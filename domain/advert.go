@@ -3,10 +3,10 @@ package domain
 type AdvertType string
 
 const (
-	Transport   AdvertType = "transport"
-	Lawyer                 = "lawyer"
-	PlaceToStay            = "place_to_stay"
-	Job                    = "job"
+	AdvertTypeTransport   AdvertType = "transport"
+	AdvertTypeLawyer                 = "lawyer"
+	AdvertTypePlaceToStay            = "place_to_stay"
+	AdvertTypeJob                    = "job"
 )
 
 type Advert struct {
