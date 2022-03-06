@@ -9,13 +9,14 @@ import (
 )
 
 type User struct {
+	ID             uuid.UUID
 	Person         domain.Person
 	ContactDetails domain.ContactDetails
 }
 
 var (
 	MissingPersonalDataErr = errors.New("missing personal data")
-	MissingContactDataErr = errors.New("missing contact data")
+	MissingContactDataErr  = errors.New("missing contact data")
 )
 
 func NewUser(firstName string, sureName string, login string, password string, contactDetails domain.ContactDetails) (*User, error) {
@@ -28,6 +29,7 @@ func NewUser(firstName string, sureName string, login string, password string, c
 	}
 
 	usr := &User{
+		uuid.New(),
 		domain.Person{
 			ID:        uuid.New(),
 			FirstName: firstName,

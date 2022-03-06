@@ -17,7 +17,11 @@ const (
 	AdvertDeletedEvent                  = "deleted"
 )
 
-var ContactEmptyErr = errors.New("contact is empty")
+var (
+	ContactEmptyErr = errors.New("contact is empty")
+	NoUserProvidedErr = errors.New("no user provided")
+	MissingBasicInfoErr = errors.New("advert is missing basic info")
+)
 
 type AdvertLog struct {
 	AdvertID uuid.UUID
@@ -47,12 +51,21 @@ func WithContactDetails(contactDetails domain.ContactDetails) AdvertOption {
 }
 
 func NewAdvert(user *user.User, title string, description string, advertType domain.AdvertType, opts ...AdvertOption) (*Advert, error) {
+	if user == nil {
+		return nil, NoUserProvidedErr
+	}
+
 	advert := &Advert{}
+
 	for _, option := range opts {
 		err := option(advert)
 		if err != nil {
 			return nil, err
 		}
+	}
+
+	if title == "" || description == "" {
+		return nil, MissingBasicInfoErr
 	}
 
 	advert.Advert.Title = title

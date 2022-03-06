@@ -33,7 +33,7 @@ func TestAdvertNew(t *testing.T) {
 			testName:    "Correct data using user contact details",
 			user:        usr,
 			title:       "Relocation for refugees",
-			description: "",
+			description: "desc",
 			advertType:  domain.AdvertTypeTransport,
 			expectedErr: nil,
 			// The constructor got no ContactDetails - it means that it will use user contact details by default
@@ -43,7 +43,7 @@ func TestAdvertNew(t *testing.T) {
 			testName:    "Correct data with different contact details",
 			user:        usr,
 			title:       "Relocation for refugees",
-			description: "",
+			description: "desc",
 			advertType:  domain.AdvertTypeTransport,
 			opts:        []AdvertOption{WithContactDetails(domain.NewContactDetails("refugee_help@wp.pl", "111222333"))},
 			expectedErr: nil,
@@ -53,10 +53,19 @@ func TestAdvertNew(t *testing.T) {
 			testName:    "Correct data with different contact details",
 			user:        usr,
 			title:       "Relocation for refugees",
-			description: "",
 			advertType:  domain.AdvertTypeTransport,
 			opts:        []AdvertOption{WithContactDetails(domain.ContactDetails{})},
 			expectedErr: ContactEmptyErr,
+		},
+		{
+			testName:    "Missing basic info",
+			user:        usr,
+			expectedErr: MissingBasicInfoErr,
+		},
+		{
+			testName:    "No user provided",
+			user:        nil,
+			expectedErr: NoUserProvidedErr,
 		},
 	}
 
