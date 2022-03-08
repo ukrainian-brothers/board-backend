@@ -1,6 +1,7 @@
 package advert_repo
 
 import (
+	"context"
 	"errors"
 	"github.com/google/uuid"
 	"github.com/ukrainian-brothers/board-backend/domain/advert"
@@ -12,7 +13,7 @@ var (
 )
 
 type Repository interface {
-	Get(id uuid.UUID) (advert.Advert, error)
-	Add(advert advert.Advert) error
-	Delete(id uuid.UUID) error
+	Get(ctx context.Context, id uuid.UUID) (advert.Advert, error)
+	Add(ctx context.Context, advert advert.Advert) error
+	Delete(ctx context.Context, id uuid.UUID) error
 }

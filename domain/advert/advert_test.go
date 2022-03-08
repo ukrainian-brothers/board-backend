@@ -8,15 +8,18 @@ import (
 )
 
 func TestAdvertNew(t *testing.T) {
+	type expectations struct {
+		err            error
+		contactDetails domain.ContactDetails
+	}
 	type testData struct {
-		testName    string
-		user        *user.User
-		title       string
-		description string
-		advertType  domain.AdvertType
-		opts        []AdvertOption
-		expectedErr error
-		expectedContactDetails domain.ContactDetails
+		testName     string
+		user         *user.User
+		title        string
+		description  string
+		advertType   domain.AdvertType
+		opts         []AdvertOption
+		expectations expectations
 	}
 
 	usr, err := user.NewUser(
@@ -35,9 +38,10 @@ func TestAdvertNew(t *testing.T) {
 			title:       "Relocation for refugees",
 			description: "desc",
 			advertType:  domain.AdvertTypeTransport,
-			expectedErr: nil,
-			// The constructor got no ContactDetails - it means that it will use user contact details by default
-			expectedContactDetails: domain.NewContactDetails("adam@wp.pl", "111222333"),
+			expectations: expectations{
+				err:            nil,
+				contactDetails: domain.NewContactDetails("adam@wp.pl", "111222333"),
+			},
 		},
 		{
 			testName:    "Correct data with different contact details",
@@ -46,35 +50,43 @@ func TestAdvertNew(t *testing.T) {
 			description: "desc",
 			advertType:  domain.AdvertTypeTransport,
 			opts:        []AdvertOption{WithContactDetails(domain.NewContactDetails("refugee_help@wp.pl", "111222333"))},
-			expectedErr: nil,
-			expectedContactDetails: domain.NewContactDetails("refugee_help@wp.pl", "111222333"),
+			expectations: expectations{
+				err:            nil,
+				contactDetails: domain.NewContactDetails("refugee_help@wp.pl", "111222333"),
+			},
 		},
 		{
-			testName:    "Correct data with different contact details",
-			user:        usr,
-			title:       "Relocation for refugees",
-			advertType:  domain.AdvertTypeTransport,
-			opts:        []AdvertOption{WithContactDetails(domain.ContactDetails{})},
-			expectedErr: ContactEmptyErr,
+			testName:   "Correct data with different contact details",
+			user:       usr,
+			title:      "Relocation for refugees",
+			advertType: domain.AdvertTypeTransport,
+			opts:       []AdvertOption{WithContactDetails(domain.ContactDetails{})},
+			expectations: expectations{
+				err: ContactEmptyErr,
+			},
 		},
 		{
-			testName:    "Missing basic info",
-			user:        usr,
-			expectedErr: MissingBasicInfoErr,
+			testName: "Missing basic info",
+			user:     usr,
+			expectations: expectations{
+				err: MissingBasicInfoErr,
+			},
 		},
 		{
-			testName:    "No user provided",
-			user:        nil,
-			expectedErr: NoUserProvidedErr,
+			testName: "No user provided",
+			user:     nil,
+			expectations: expectations{
+				err: NoUserProvidedErr,
+			},
 		},
 	}
 
 	for _, test := range testCases {
 		t.Run(test.testName, func(t *testing.T) {
 			adv, err := NewAdvert(test.user, test.title, test.description, test.advertType, test.opts...)
-			assert.Equal(t, test.expectedErr, err)
+			assert.Equal(t, test.expectations.err, err)
 			if err == nil {
-				assert.Equal(t, test.expectedContactDetails, adv.Advert.ContactDetails)
+				assert.Equal(t, test.expectations.contactDetails, adv.Advert.ContactDetails)
 			}
 		})
 
