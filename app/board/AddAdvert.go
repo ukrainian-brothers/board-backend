@@ -1,13 +1,19 @@
 package board
 
-import "context"
+import (
+	"context"
+	"github.com/ukrainian-brothers/board-backend/domain/user"
+	"github.com/ukrainian-brothers/board-backend/internal/advert_repo"
+)
 
 type AddAdvert struct {
-	AdvertRepo interface{}
+	AdvertRepo advert_repo.Repository
 }
 
-func NewAddAdvert(advertRepo interface{}) *AddAdvert {
+func NewAddAdvert(advertRepo advert_repo.Repository) *AddAdvert {
 	return &AddAdvert{AdvertRepo: advertRepo}
 }
 
-func (a AddAdvert) Execute(ctx context.Context) error {return nil}
+func (a AddAdvert) Execute(ctx context.Context, usr *user.User) error {
+	return nil
+}
