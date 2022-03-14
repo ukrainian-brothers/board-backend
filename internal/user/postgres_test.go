@@ -124,7 +124,7 @@ func TestGetById(t *testing.T) {
 			testUser := tC.pre(t)
 
 			_, err := repo.GetByID(context.Background(), testUser.ID)
-			assert.Equal(t, tC.expectedErr, err)
+			assert.ErrorIs(t, err, tC.expectedErr)
 
 			tC.cleanUp(t, testUser.ID.String())
 		})
