@@ -10,6 +10,8 @@ import (
 
 type User struct {
 	ID             uuid.UUID
+	Login          string
+	Password       *string
 	Person         domain.Person
 	ContactDetails domain.ContactDetails
 }
@@ -29,15 +31,14 @@ func NewUser(firstName string, sureName string, login string, password string, c
 	}
 
 	usr := &User{
-		uuid.New(),
-		domain.Person{
-			ID:        uuid.New(),
+		ID: uuid.New(),
+		Login: login,
+		Password:   &password,
+		Person: domain.Person{
 			FirstName: firstName,
 			Surname:   sureName,
-			Login:     login,
-			Password:  &password,
 		},
-		contactDetails,
+		ContactDetails: contactDetails,
 	}
 
 	return usr, nil

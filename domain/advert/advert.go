@@ -32,7 +32,7 @@ type AdvertLog struct {
 type Advert struct {
 	ID          uuid.UUID
 	Advert      domain.Advert
-	Creator     user.User
+	User        *user.User
 	CreatedAt   time.Time
 	UpdatedAt   *time.Time
 	DestroyedAt *time.Time
@@ -55,7 +55,7 @@ func NewAdvert(user *user.User, title string, description string, advertType dom
 		return nil, NoUserProvidedErr
 	}
 
-	advert := &Advert{}
+	advert := &Advert{ID: uuid.New()}
 
 	for _, option := range opts {
 		err := option(advert)
@@ -67,7 +67,7 @@ func NewAdvert(user *user.User, title string, description string, advertType dom
 	if title == "" || description == "" {
 		return nil, MissingBasicInfoErr
 	}
-
+	advert.User = user
 	advert.Advert.Title = title
 	advert.Advert.Description = description
 	advert.Advert.Type = advertType
