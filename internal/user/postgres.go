@@ -2,16 +2,17 @@ package user
 
 import (
 	"context"
+	"fmt"
 	"github.com/go-gorp/gorp"
 	"github.com/google/uuid"
 	"github.com/ukrainian-brothers/board-backend/domain"
 	"github.com/ukrainian-brothers/board-backend/domain/user"
 )
 
+//@TODO: Wrapped errors in methods
 type PostgresRepository struct {
 	db *gorp.DbMap
 }
-
 type userDB struct {
 	ID          uuid.UUID `db:"id"`
 	Login       string    `db:"login"`
@@ -28,18 +29,21 @@ func NewPostgresUserRepository(db *gorp.DbMap) *PostgresRepository {
 }
 
 func (repo PostgresRepository) GetByID(ctx context.Context, id uuid.UUID) (*user.User, error) {
-	repo.db.WithContext(ctx)
-	obj, err := repo.db.Get(user.User{}, id)
+	sqlExecutor := repo.db.WithContext(ctx)
+
+	var usr userDB
+	err := sqlExecutor.SelectOne(&usr, `
+	SELECT  login, id, password, name, surname, mail, phone_number FROM users
+	WHERE id=$1`, id)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("GetByID failed while selecting user %w", err)
 	}
 
-	usr := obj.(*userDB)
 	return &user.User{
-		ID:             id,
-		Login:          usr.Login,
-		Password:       usr.Password,
-		Person:         domain.Person{
+		ID:       id,
+		Login:    usr.Login,
+		Password: usr.Password,
+		Person: domain.Person{
 			FirstName: usr.FirstName,
 			Surname:   usr.Surname,
 		},
@@ -51,21 +55,19 @@ func (repo PostgresRepository) GetByID(ctx context.Context, id uuid.UUID) (*user
 }
 
 func (repo PostgresRepository) GetByLogin(ctx context.Context, login string) (*user.User, error) {
-	repo.db.WithContext(ctx)
+	sqlExecutor := repo.db.WithContext(ctx)
 
 	var usr userDB
-	err := repo.db.SelectOne(&usr, "select * from users where login=$1", login)
-
-
+	err := sqlExecutor.SelectOne(&usr, "select * from users where login=$1", login)
 	if err != nil {
 		return nil, err
 	}
 
 	return &user.User{
-		ID:             usr.ID,
-		Login:          usr.Login,
-		Password:       usr.Password,
-		Person:         domain.Person{
+		ID:       usr.ID,
+		Login:    usr.Login,
+		Password: usr.Password,
+		Person: domain.Person{
 			FirstName: usr.FirstName,
 			Surname:   usr.Surname,
 		},
@@ -73,10 +75,11 @@ func (repo PostgresRepository) GetByLogin(ctx context.Context, login string) (*u
 			Mail:        usr.Mail,
 			PhoneNumber: usr.PhoneNumber,
 		},
-	}, err
+	}, nil
 }
 
 func (repo PostgresRepository) Add(ctx context.Context, user *user.User) error {
+
 	userDB := userDB{
 		ID:          user.ID,
 		Login:       user.Login,
