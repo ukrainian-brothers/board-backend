@@ -60,7 +60,7 @@ func (repo PostgresRepository) GetByLogin(ctx context.Context, login string) (*u
 	var usr userDB
 	err := sqlExecutor.SelectOne(&usr, "select * from users where login=$1", login)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("GetByLogin failed while selecting user %w", err)
 	}
 
 	return &user.User{
@@ -79,7 +79,6 @@ func (repo PostgresRepository) GetByLogin(ctx context.Context, login string) (*u
 }
 
 func (repo PostgresRepository) Add(ctx context.Context, user *user.User) error {
-
 	userDB := userDB{
 		ID:          user.ID,
 		Login:       user.Login,
@@ -92,7 +91,7 @@ func (repo PostgresRepository) Add(ctx context.Context, user *user.User) error {
 	repo.db.WithContext(ctx)
 	err := repo.db.Insert(&userDB)
 	if err != nil {
-		return err
+		return fmt.Errorf("adding user failed %w", err)
 	}
 	return nil
 }

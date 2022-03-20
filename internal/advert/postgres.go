@@ -2,6 +2,7 @@ package advert
 
 import (
 	"context"
+	"fmt"
 	"github.com/go-gorp/gorp"
 	"github.com/google/uuid"
 	"github.com/ukrainian-brothers/board-backend/domain"
@@ -53,10 +54,14 @@ func (repo PostgresRepository) Get(ctx context.Context, id uuid.UUID) (advert.Ad
 
 	err := repo.db.SelectOne(&adv, "SELECT * FROM adverts INNER JOIN users ON (adverts.user_id = users.id) WHERE adverts.id=$1;", id.String())
 	if err != nil {
-		return advert.Advert{}, err
+		return advert.Advert{}, fmt.Errorf("getting advert failed while selecting from db %w", err)
 	}
 
-	usr, err := user.NewUser(adv.FirstName, adv.Surname, adv.Login, *adv.Password, domain.NewContactDetails(*adv.ContactDetails.Mail, *adv.ContactDetails.PhoneNumber)) // This is temporary solution, there HAVE TO BE JOIN in query which will get the user out of another table
+	usr, err := user.NewUser(adv.FirstName, adv.Surname, adv.Login, *adv.Password, domain.NewContactDetails(*adv.Mail, *adv.PhoneNumber)) // This is temporary solution, there HAVE TO BE JOIN in query which will get the user out of another table
+	if err != nil {
+		return advert.Advert{}, fmt.Errorf("getting advert failed while performing NewUser() %w", err)
+	}
+
 	return advert.Advert{
 		ID:          adv.ID,
 		Advert:      domain.Advert{
@@ -70,7 +75,7 @@ func (repo PostgresRepository) Get(ctx context.Context, id uuid.UUID) (advert.Ad
 		CreatedAt:   adv.CreatedAt,
 		UpdatedAt:   adv.UpdatedAt,
 		DestroyedAt: adv.DestroyedAt,
-	}, err
+	}, nil
 }
 
 func (repo PostgresRepository) Add(ctx context.Context, advert *advert.Advert) error {
@@ -86,7 +91,7 @@ func (repo PostgresRepository) Add(ctx context.Context, advert *advert.Advert) e
 	repo.db.WithContext(ctx)
 	err := repo.db.Insert(&advertDb)
 	if err != nil {
-		return err
+		return fmt.Errorf("adding advert failed while performing sql %w", err)
 	}
 	return nil
 }

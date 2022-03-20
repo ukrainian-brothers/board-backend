@@ -17,7 +17,7 @@ func createString(s string) *string {
 }
 
 func TestUserPostgresAdd(t *testing.T) {
-	cfg, err := common.NewConfigFromFile("../../config/configuration.test.local.json") // TODO: Describe how to achive this config in README.MD
+	cfg, err := common.NewConfigFromFile("../../config/configuration.test.local.json")
 	assert.NoError(t, err)
 	db := common.InitPostgres(&cfg.Postgres)
 	repo := internalUser.NewPostgresUserRepository(db)
@@ -63,14 +63,14 @@ func TestUserPostgresAdd(t *testing.T) {
 }
 
 func TestGetById(t *testing.T) {
-	cfg, err := common.NewConfigFromFile("../../config/configuration.test.local.json") // TODO: Describe how to achive this config in README.MD
+	cfg, err := common.NewConfigFromFile("../../config/configuration.test.local.json")
 	assert.NoError(t, err)
 	db := common.InitPostgres(&cfg.Postgres)
 	repo := internalUser.NewPostgresUserRepository(db)
 
 	type testCase struct {
 		name        string
-		pre         func(t *testing.T) (result user.User)
+		pre         func(t *testing.T) (result *user.User)
 		cleanUp     func(t *testing.T, id string)
 		expectedErr error
 	}
@@ -78,7 +78,7 @@ func TestGetById(t *testing.T) {
 	testCases := []testCase{
 		{
 			name: "EXISTING_USER",
-			pre: func(t *testing.T) (result user.User) {
+			pre: func(t *testing.T) (result *user.User) {
 				var user = user.User{
 					ID:       uuid.MustParse("69129a87-cccb-49f0-98c8-fc9b7a5e04dc"),
 					Login:    "foo",
@@ -96,7 +96,7 @@ func TestGetById(t *testing.T) {
 				err = db.Insert(&user)
 				assert.NoError(t, err)
 
-				return user
+				return &user
 			},
 			cleanUp: func(t *testing.T, id string) {
 				_, err := db.Exec("DELETE FROM users WHERE id=$1", id)
@@ -106,8 +106,83 @@ func TestGetById(t *testing.T) {
 		},
 		{
 			name: "NOT_EXISTING_USER",
-			pre: func(t *testing.T) (result user.User) {
-				result.ID = uuid.MustParse("5e8d9731-2437-4ba0-810e-468f983e1a0b")
+			pre: func(t *testing.T) (result *user.User) {
+				result = &user.User{
+					ID: uuid.MustParse("5e8d9731-2437-4ba0-810e-468f983e1a0b"),
+				}
+				return result
+			},
+			cleanUp: func(t *testing.T, id string) {
+			},
+			expectedErr: sql.ErrNoRows,
+		},
+	}
+
+	for _, tC := range testCases {
+		t.Run(tC.name, func(t *testing.T) {
+			t.Parallel()
+
+			testUser := tC.pre(t)
+
+			usr, err := repo.GetByID(context.Background(), testUser.ID)
+			assert.ErrorIs(t, err, tC.expectedErr)
+			if tC.expectedErr == nil {
+				user.Assert(t, testUser, usr)
+			}
+
+			tC.cleanUp(t, testUser.ID.String())
+		})
+	}
+}
+
+func TestGetByLogin(t *testing.T) {
+	cfg, err := common.NewConfigFromFile("../../config/configuration.test.local.json")
+	assert.NoError(t, err)
+	db := common.InitPostgres(&cfg.Postgres)
+	repo := internalUser.NewPostgresUserRepository(db)
+
+	type testCase struct {
+		name        string
+		pre         func(t *testing.T) (result *user.User)
+		cleanUp     func(t *testing.T, id string)
+		expectedErr error
+	}
+
+	testCases := []testCase{
+		{
+			name:  "EXISTING_USER",
+			pre: func(t *testing.T) (result *user.User) {
+				var usr = user.User{
+					ID:       uuid.MustParse("69129a87-cccb-49f0-98c8-fc9b7a5e04dc"),
+					Login:    "the_login",
+					Password: createString("foobar"),
+					Person: domain.Person{
+						FirstName: "Foo",
+						Surname:   "Bar",
+					},
+					ContactDetails: domain.ContactDetails{
+						Mail:        createString("foo@gmail.com"),
+						PhoneNumber: createString("+482222222"),
+					},
+				}
+
+				err = db.Insert(&usr)
+				assert.NoError(t, err)
+
+				return &usr
+			},
+			cleanUp: func(t *testing.T, id string) {
+				_, err := db.Exec("DELETE FROM users WHERE id=$1", id)
+				assert.NoError(t, err)
+			},
+			expectedErr: nil,
+		},
+		{
+			name: "NOT_EXISTING_USER",
+			pre: func(t *testing.T) (result *user.User) {
+				result = &user.User{
+					ID: uuid.MustParse("5e8d9731-2437-4ba0-810e-468f983e1a0b"),
+				}
 
 				return result
 			},
@@ -123,8 +198,11 @@ func TestGetById(t *testing.T) {
 
 			testUser := tC.pre(t)
 
-			_, err := repo.GetByID(context.Background(), testUser.ID)
+			usr, err := repo.GetByLogin(context.Background(), testUser.Login)
 			assert.ErrorIs(t, err, tC.expectedErr)
+			if tC.expectedErr == nil {
+				user.Assert(t, testUser, usr)
+			}
 
 			tC.cleanUp(t, testUser.ID.String())
 		})
