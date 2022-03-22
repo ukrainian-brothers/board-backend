@@ -7,6 +7,10 @@ import (
 	"testing"
 )
 
+func newStringPtr(s string) *string {
+	return &s
+}
+
 func TestAdvertNew(t *testing.T) {
 	type expectations struct {
 		err            error
@@ -27,7 +31,10 @@ func TestAdvertNew(t *testing.T) {
 		"Małysz",
 		"adam@wp.pl",
 		"abc",
-		domain.NewContactDetails("adam@wp.pl", "111222333"),
+		domain.ContactDetails{
+			Mail:        newStringPtr("mail"),
+			PhoneNumber: newStringPtr("phone"),
+		},
 	)
 	assert.NoError(t, err)
 
@@ -39,8 +46,11 @@ func TestAdvertNew(t *testing.T) {
 			description: "desc",
 			advertType:  domain.AdvertTypeTransport,
 			expectations: expectations{
-				err:            nil,
-				contactDetails: domain.NewContactDetails("adam@wp.pl", "111222333"),
+				err: nil,
+				contactDetails: domain.ContactDetails{
+					Mail:        newStringPtr("mail"),
+					PhoneNumber: newStringPtr("phone"),
+				},
 			},
 		},
 		{
@@ -49,10 +59,18 @@ func TestAdvertNew(t *testing.T) {
 			title:       "Relocation for refugees",
 			description: "desc",
 			advertType:  domain.AdvertTypeTransport,
-			opts:        []AdvertOption{WithContactDetails(domain.NewContactDetails("refugee_help@wp.pl", "111222333"))},
+			opts: []AdvertOption{
+				WithContactDetails(
+					domain.ContactDetails{
+						Mail:        newStringPtr("mail"),
+						PhoneNumber: newStringPtr("phone"),
+					})},
 			expectations: expectations{
-				err:            nil,
-				contactDetails: domain.NewContactDetails("refugee_help@wp.pl", "111222333"),
+				err: nil,
+				contactDetails: domain.ContactDetails{
+					Mail:        newStringPtr("mail"),
+					PhoneNumber: newStringPtr("phone"),
+				},
 			},
 		},
 		{

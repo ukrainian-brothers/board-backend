@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/ukrainian-brothers/board-backend/domain"
 	"github.com/ukrainian-brothers/board-backend/domain/user"
 	"github.com/ukrainian-brothers/board-backend/internal/common"
@@ -19,7 +20,10 @@ func createString(s string) *string {
 func TestUserPostgresAdd(t *testing.T) {
 	cfg, err := common.NewConfigFromFile("../../config/configuration.test.local.json")
 	assert.NoError(t, err)
-	db := common.InitPostgres(&cfg.Postgres)
+
+	db, err := common.InitPostgres(&cfg.Postgres)
+	require.NoError(t, err)
+
 	repo := internalUser.NewPostgresUserRepository(db)
 
 	type testCase struct {
@@ -65,7 +69,89 @@ func TestUserPostgresAdd(t *testing.T) {
 func TestGetById(t *testing.T) {
 	cfg, err := common.NewConfigFromFile("../../config/configuration.test.local.json")
 	assert.NoError(t, err)
-	db := common.InitPostgres(&cfg.Postgres)
+
+	db, err := common.InitPostgres(&cfg.Postgres)
+	require.NoError(t, err)
+
+	repo := internalUser.NewPostgresUserRepository(db)
+
+	type testCase struct {
+		name        string
+		user        *user.User
+		pre         func(t *testing.T, user *user.User)
+		cleanUp     func(t *testing.T, id string)
+		expectedErr error
+	}
+
+	testCases := []testCase{
+		{
+			name: "EXISTING_USER",
+			user: &user.User{
+				ID:       uuid.MustParse("69129a87-cccb-49f0-98c8-fc9b7a5e04dc"),
+				Login:    "foo",
+				Password: createString("foobar"),
+				Person: domain.Person{
+					FirstName: "Foo",
+					Surname:   "Bar",
+				},
+				ContactDetails: domain.ContactDetails{
+					Mail:        createString("foo@gmail.com"),
+					PhoneNumber: createString("+482222222"),
+				},
+			},
+			pre: func(t *testing.T, user *user.User) {
+				usr := internalUser.UserDB{
+					ID:          user.ID,
+					Login:       user.Login,
+					Password:    user.Password,
+					FirstName:   user.Person.FirstName,
+					Surname:     user.Person.Surname,
+					Mail:        createString("foo@gmail.com"),
+					PhoneNumber: createString("+482222222"),
+				}
+
+				err = db.Insert(&usr)
+				assert.NoError(t, err)
+			},
+			cleanUp: func(t *testing.T, id string) {
+				_, err := db.Exec("DELETE FROM users WHERE id=$1", id)
+				assert.NoError(t, err)
+			},
+			expectedErr: nil,
+		},
+		{
+			name: "NOT_EXISTING_USER",
+			user: &user.User{
+				ID: uuid.MustParse("5e8d9731-2437-4ba0-810e-468f983e1a0b"),
+			},
+			cleanUp:     func(t *testing.T, id string) {},
+			pre:         func(t *testing.T, user *user.User) {},
+			expectedErr: sql.ErrNoRows,
+		},
+	}
+
+	for _, tC := range testCases {
+		t.Run(tC.name, func(t *testing.T) {
+			tC.pre(t, tC.user)
+
+			usr, err := repo.GetByID(context.Background(), tC.user.ID)
+			assert.ErrorIs(t, err, tC.expectedErr)
+			if tC.expectedErr == nil {
+				user.Assert(t, tC.user, usr)
+			}
+
+			tC.cleanUp(t, tC.user.ID.String())
+		})
+	}
+}
+
+func TestGetByLogin(t *testing.T) {
+	cfg, err := common.NewConfigFromFile("../../config/configuration.test.local.json")
+	assert.NoError(t, err)
+
+	db, err := common.InitPostgres(&cfg.Postgres)
+	require.NoError(t, err)
+
 	repo := internalUser.NewPostgresUserRepository(db)
 
 	type testCase struct {
@@ -78,79 +164,6 @@ func TestGetById(t *testing.T) {
 	testCases := []testCase{
 		{
 			name: "EXISTING_USER",
-			pre: func(t *testing.T) (result *user.User) {
-				var user = user.User{
-					ID:       uuid.MustParse("69129a87-cccb-49f0-98c8-fc9b7a5e04dc"),
-					Login:    "foo",
-					Password: createString("foobar"),
-					Person: domain.Person{
-						FirstName: "Foo",
-						Surname:   "Bar",
-					},
-					ContactDetails: domain.ContactDetails{
-						Mail:        createString("foo@gmail.com"),
-						PhoneNumber: createString("+482222222"),
-					},
-				}
-
-				err = db.Insert(&user)
-				assert.NoError(t, err)
-
-				return &user
-			},
-			cleanUp: func(t *testing.T, id string) {
-				_, err := db.Exec("DELETE FROM users WHERE id=$1", id)
-				assert.NoError(t, err)
-			},
-			expectedErr: nil,
-		},
-		{
-			name: "NOT_EXISTING_USER",
-			pre: func(t *testing.T) (result *user.User) {
-				result = &user.User{
-					ID: uuid.MustParse("5e8d9731-2437-4ba0-810e-468f983e1a0b"),
-				}
-				return result
-			},
-			cleanUp: func(t *testing.T, id string) {
-			},
-			expectedErr: sql.ErrNoRows,
-		},
-	}
-
-	for _, tC := range testCases {
-		t.Run(tC.name, func(t *testing.T) {
-			t.Parallel()
-
-			testUser := tC.pre(t)
-
-			usr, err := repo.GetByID(context.Background(), testUser.ID)
-			assert.ErrorIs(t, err, tC.expectedErr)
-			if tC.expectedErr == nil {
-				user.Assert(t, testUser, usr)
-			}
-
-			tC.cleanUp(t, testUser.ID.String())
-		})
-	}
-}
-
-func TestGetByLogin(t *testing.T) {
-	cfg, err := common.NewConfigFromFile("../../config/configuration.test.local.json")
-	assert.NoError(t, err)
-	db := common.InitPostgres(&cfg.Postgres)
-	repo := internalUser.NewPostgresUserRepository(db)
-
-	type testCase struct {
-		name        string
-		pre         func(t *testing.T) (result *user.User)
-		cleanUp     func(t *testing.T, id string)
-		expectedErr error
-	}
-
-	testCases := []testCase{
-		{
-			name:  "EXISTING_USER",
 			pre: func(t *testing.T) (result *user.User) {
 				var usr = user.User{
 					ID:       uuid.MustParse("69129a87-cccb-49f0-98c8-fc9b7a5e04dc"),

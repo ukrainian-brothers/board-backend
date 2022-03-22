@@ -13,7 +13,8 @@ import (
 type PostgresRepository struct {
 	db *gorp.DbMap
 }
-type userDB struct {
+
+type UserDB struct {
 	ID          uuid.UUID `db:"id"`
 	Login       string    `db:"login"`
 	Password    *string   `db:"password"`
@@ -24,14 +25,14 @@ type userDB struct {
 }
 
 func NewPostgresUserRepository(db *gorp.DbMap) *PostgresRepository {
-	db.AddTableWithName(userDB{}, "users").SetKeys(false, "id")
+	db.AddTableWithName(UserDB{}, "users").SetKeys(false, "id")
 	return &PostgresRepository{db: db}
 }
 
 func (repo PostgresRepository) GetByID(ctx context.Context, id uuid.UUID) (*user.User, error) {
 	sqlExecutor := repo.db.WithContext(ctx)
 
-	var usr userDB
+	var usr UserDB
 	err := sqlExecutor.SelectOne(&usr, `
 	SELECT  login, id, password, name, surname, mail, phone_number FROM users
 	WHERE id=$1`, id)
@@ -57,7 +58,7 @@ func (repo PostgresRepository) GetByID(ctx context.Context, id uuid.UUID) (*user
 func (repo PostgresRepository) GetByLogin(ctx context.Context, login string) (*user.User, error) {
 	sqlExecutor := repo.db.WithContext(ctx)
 
-	var usr userDB
+	var usr UserDB
 	err := sqlExecutor.SelectOne(&usr, "select * from users where login=$1", login)
 	if err != nil {
 		return nil, fmt.Errorf("GetByLogin failed while selecting user %w", err)
@@ -79,7 +80,7 @@ func (repo PostgresRepository) GetByLogin(ctx context.Context, login string) (*u
 }
 
 func (repo PostgresRepository) Add(ctx context.Context, user *user.User) error {
-	userDB := userDB{
+	userDB := UserDB{
 		ID:          user.ID,
 		Login:       user.Login,
 		Password:    user.Password,

@@ -1,26 +1,34 @@
 package domain
 
+import (
+	"errors"
+	"regexp"
+)
+
 type ContactDetails struct {
 	Mail        *string
 	PhoneNumber *string
 }
 
-// TODO: Create ContactDetails aggregate which will have logic for checking if the mail and phone numbers are correct according to domain policy
-func NewContactDetails(mail string, phoneNumber string) ContactDetails {
+var (
+	InvalidDataErr    = errors.New("invalid contact data")
+	emailAddressRegex = regexp.MustCompile("(?:[a-z0-9!#$%&'*+/=?^_ \\x60{|}~-]+(?:\\.[a-z0-9!#$%&'*+/=?^_ \\x60{|}~-]+)*|\"(?:[\\x01-\\x08\\x0b\\x0c\\x0e-\\x1f\\x21\\x23-\\x5b\\x5d-\\x7f]|\\\\[\\x01-\\x09\\x0b\\x0c\\x0e-\\x7f])*\")@(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\\[(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?|[a-z0-9-]*[a-z0-9]:(?:[\\x01-\\x08\\x0b\\x0c\\x0e-\\x1f\\x21-\\x5a\\x53-\\x7f]|\\\\[\\x01-\\x09\\x0b\\x0c\\x0e-\\x7f])+)\\])") // RFC 5322
+	phoneRegex        = regexp.MustCompile("^\\+[0-9]{2} [0-9]{3} [0-9]{3} [0-9]{3}$")
+)
+
+func NewContactDetails(mail *string, phoneNumber *string) (ContactDetails, error) {
 	details := ContactDetails{
-		Mail:        &mail,
-		PhoneNumber: &phoneNumber,
+		Mail:        mail,
+		PhoneNumber: phoneNumber,
 	}
-	if phoneNumber == "" {
-		details.PhoneNumber = nil
+	isMailValid := emailAddressRegex.MatchString(*mail)
+	isPhoneValid := phoneRegex.MatchString(*phoneNumber)
+
+	if !isMailValid && !isPhoneValid {
+		return ContactDetails{}, InvalidDataErr
 	}
 
-	if mail == "" {
-		details.Mail = nil
-	}
-
-	// TODO: Validate length of mail and phone number
-	return details
+	return details, nil
 }
 
 func (cd ContactDetails) IsEmpty() bool {

@@ -4,41 +4,32 @@ import (
 	"context"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/ukrainian-brothers/board-backend/domain"
 	"github.com/ukrainian-brothers/board-backend/domain/advert"
 	"github.com/ukrainian-brothers/board-backend/domain/user"
 	"github.com/ukrainian-brothers/board-backend/internal/common"
+	internalUser "github.com/ukrainian-brothers/board-backend/internal/user"
 	"testing"
 	"time"
 )
 
-func createString(s string) *string {
-	return &s
-}
-
 func getContactDetails() domain.ContactDetails {
 	return domain.ContactDetails{
-		Mail:        createString("foo@gmail.com"),
-		PhoneNumber: createString("+482222222"),
+		Mail:        newStringPtr("foo@gmail.com"),
+		PhoneNumber: newStringPtr("+482222222"),
 	}
-}
-
-type userDB struct {
-	ID          uuid.UUID `db:"id"`
-	Login       string    `db:"login"`
-	Password    *string   `db:"password"`
-	FirstName   string    `db:"name"`
-	Surname     string    `db:"surname"`
-	Mail        *string   `db:"mail"`
-	PhoneNumber *string   `db:"phone_number"`
 }
 
 func TestAdvertPostgresAdd(t *testing.T) {
 	cfg, err := common.NewConfigFromFile("../../config/configuration.test.local.json")
 	assert.NoError(t, err)
-	db := common.InitPostgres(&cfg.Postgres)
+
+	db, err := common.InitPostgres(&cfg.Postgres)
+	require.NoError(t, err)
+
 	repo := NewPostgresAdvertRepository(db)
-	db.AddTableWithName(userDB{}, "users").SetKeys(false, "id")
+	db.AddTableWithName(internalUser.UserDB{}, "users").SetKeys(false, "id")
 
 	type testCase struct {
 		name        string
@@ -62,7 +53,7 @@ func TestAdvertPostgresAdd(t *testing.T) {
 				User: &user.User{
 					ID:       uuid.MustParse("69129a87-cccb-49f0-98c8-fc9b7a5e04dc"),
 					Login:    "the_login",
-					Password: createString("foobar"),
+					Password: newStringPtr("foobar"),
 					Person: domain.Person{
 						FirstName: "Foo",
 						Surname:   "Bar",
@@ -73,7 +64,7 @@ func TestAdvertPostgresAdd(t *testing.T) {
 			},
 			pre: func(t *testing.T, adv *advert.Advert) {
 				usr := adv.User
-				usrForDB := userDB{
+				usrForDB := internalUser.UserDB{
 					ID:          usr.ID,
 					Login:       usr.Login,
 					Password:    usr.Password,

@@ -6,6 +6,10 @@ import (
 	"testing"
 )
 
+func newStringPtr(s string) *string {
+	return &s
+}
+
 func TestUserCreation(t *testing.T) {
 	type testData struct {
 		testName       string
@@ -24,7 +28,10 @@ func TestUserCreation(t *testing.T) {
 			surname:        "Małysz",
 			login:          "adam@wp.pl",
 			password:       "abc",
-			contactDetails: domain.NewContactDetails("refugees_help@wp.pl", "111222333"),
+			contactDetails: domain.ContactDetails{
+				Mail:        newStringPtr("mail"),
+				PhoneNumber: newStringPtr("phone"),
+			},
 			expectedErr:    nil,
 		},
 		{
