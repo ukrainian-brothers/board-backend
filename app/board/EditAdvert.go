@@ -10,4 +10,6 @@ func NewEditAdvert(advertRepo interface{}) EditAdvert {
 	return EditAdvert{AdvertRepo: advertRepo}
 }
 
-func (a EditAdvert) Execute(ctx context.Context) error {return nil}
+func (a EditAdvert) Execute(ctx context.Context) error {
+	panic("not implemented yet")
+}

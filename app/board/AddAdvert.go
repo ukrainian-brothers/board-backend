@@ -3,7 +3,6 @@ package board
 import (
 	"context"
 	"github.com/ukrainian-brothers/board-backend/domain/advert"
-	"github.com/ukrainian-brothers/board-backend/domain/user"
 )
 
 type AddAdvert struct {
@@ -14,6 +13,10 @@ func NewAddAdvert(advertRepo advert.Repository) *AddAdvert {
 	return &AddAdvert{AdvertRepo: advertRepo}
 }
 
-func (a AddAdvert) Execute(ctx context.Context, usr *user.User) error {
+func (a AddAdvert) Execute(ctx context.Context, advert *advert.Advert) error {
+	err := a.AdvertRepo.Add(ctx, advert)
+	if err != nil {
+		return err
+	}
 	return nil
 }
