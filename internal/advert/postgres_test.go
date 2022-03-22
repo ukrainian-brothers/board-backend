@@ -53,7 +53,7 @@ func TestAdvertPostgresAdd(t *testing.T) {
 			name: "Success",
 			advert: &advert.Advert{
 				ID: uuid.New(),
-				Advert: domain.Advert{
+				Details: domain.AdvertDetails{
 					Title:          "foo",
 					Description:    "bar",
 					Type:           domain.AdvertTypePlaceToStay,

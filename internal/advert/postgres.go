@@ -64,7 +64,7 @@ func (repo PostgresRepository) Get(ctx context.Context, id uuid.UUID) (advert.Ad
 
 	return advert.Advert{
 		ID:          adv.ID,
-		Advert:      domain.Advert{
+		Details:      domain.AdvertDetails{
 			Title:          adv.Title,
 			Description:    adv.Description,
 			Type:           adv.Type,
@@ -82,10 +82,10 @@ func (repo PostgresRepository) Add(ctx context.Context, advert *advert.Advert) e
 	advertDb := advertDB {
 		ID:             advert.ID,
 		UserID:         advert.User.ID,
-		Title:          advert.Advert.Title,
-		Description:    advert.Advert.Description,
-		Type:           advert.Advert.Type,
-		ContactDetails: advert.Advert.ContactDetails,
+		Title:          advert.Details.Title,
+		Description:    advert.Details.Description,
+		Type:           advert.Details.Type,
+		ContactDetails: advert.Details.ContactDetails,
 		CreatedAt:      time.Now(),
 	}
 	repo.db.WithContext(ctx)

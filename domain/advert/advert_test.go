@@ -86,7 +86,7 @@ func TestAdvertNew(t *testing.T) {
 			adv, err := NewAdvert(test.user, test.title, test.description, test.advertType, test.opts...)
 			assert.Equal(t, test.expectations.err, err)
 			if err == nil {
-				assert.Equal(t, test.expectations.contactDetails, adv.Advert.ContactDetails)
+				assert.Equal(t, test.expectations.contactDetails, adv.Details.ContactDetails)
 			}
 		})
 

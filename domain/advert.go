@@ -9,7 +9,7 @@ const (
 	AdvertTypeJob                    = "job"
 )
 
-type Advert struct {
+type AdvertDetails struct {
 	Title          string
 	Description    string
 	Type           AdvertType
