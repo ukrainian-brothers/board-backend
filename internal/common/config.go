@@ -2,6 +2,7 @@ package common
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"os"
 )
@@ -21,17 +22,21 @@ type Config struct {
 func NewConfigFromFile(fileName string) (*Config, error) {
 	jsonFile, err := os.Open(fileName)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed open config file: %w", err)
 	}
 
 	defer jsonFile.Close()
 
 	byteValue, err := ioutil.ReadAll(jsonFile)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed read config file: %w", err)
 	}
 
 	cfg := Config{}
 	err = json.Unmarshal(byteValue, &cfg)
-	return &cfg, err
+	if err != nil {
+		return nil, fmt.Errorf("failed unmarshal config: %w", err)
+	}
+
+	return &cfg, nil
 }

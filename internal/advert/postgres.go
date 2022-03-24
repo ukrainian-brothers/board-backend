@@ -23,6 +23,10 @@ func NewPostgresAdvertRepository(db *gorp.DbMap) *PostgresRepository {
 	}
 }
 
+func newStringPtr(s string) *string {
+	return &s
+}
+
 type advertDB struct {
 	ID             uuid.UUID             `db:"id"`
 	UserID         uuid.UUID             `db:"user_id"`
@@ -52,19 +56,22 @@ func (repo PostgresRepository) Get(ctx context.Context, id uuid.UUID) (advert.Ad
 
 	adv := advertAndUser{}
 
-	err := repo.db.SelectOne(&adv, "SELECT * FROM adverts INNER JOIN users ON (adverts.user_id = users.id) WHERE adverts.id=$1;", id.String())
+	err := repo.db.SelectOne(&adv, "SELECT * FROM adverts JOIN users ON (adverts.user_id = users.id) WHERE adverts.id=$1;", id.String())
 	if err != nil {
 		return advert.Advert{}, fmt.Errorf("getting advert failed while selecting from db %w", err)
 	}
 
-	usr, err := user.NewUser(adv.FirstName, adv.Surname, adv.Login, *adv.Password, domain.NewContactDetails(*adv.Mail, *adv.PhoneNumber)) // This is temporary solution, there HAVE TO BE JOIN in query which will get the user out of another table
+	usr, err := user.NewUser(adv.FirstName, adv.Surname, adv.Login, *adv.Password, domain.ContactDetails{
+		Mail:        newStringPtr("mail"),
+		PhoneNumber: newStringPtr("phone"),
+	})
 	if err != nil {
 		return advert.Advert{}, fmt.Errorf("getting advert failed while performing NewUser() %w", err)
 	}
 
 	return advert.Advert{
-		ID:          adv.ID,
-		Details:      domain.AdvertDetails{
+		ID: adv.ID,
+		Details: domain.AdvertDetails{
 			Title:          adv.Title,
 			Description:    adv.Description,
 			Type:           adv.Type,
@@ -79,14 +86,16 @@ func (repo PostgresRepository) Get(ctx context.Context, id uuid.UUID) (advert.Ad
 }
 
 func (repo PostgresRepository) Add(ctx context.Context, advert *advert.Advert) error {
-	advertDb := advertDB {
+	advertDb := advertDB{
 		ID:             advert.ID,
 		UserID:         advert.User.ID,
 		Title:          advert.Details.Title,
 		Description:    advert.Details.Description,
 		Type:           advert.Details.Type,
 		ContactDetails: advert.Details.ContactDetails,
-		CreatedAt:      time.Now(),
+		CreatedAt:      advert.CreatedAt,
+		DestroyedAt:    advert.DestroyedAt,
+		UpdatedAt:      advert.UpdatedAt,
 	}
 	repo.db.WithContext(ctx)
 	err := repo.db.Insert(&advertDb)
