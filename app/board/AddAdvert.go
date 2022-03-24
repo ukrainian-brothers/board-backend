@@ -2,15 +2,15 @@ package board
 
 import (
 	"context"
+	"github.com/ukrainian-brothers/board-backend/domain/advert"
 	"github.com/ukrainian-brothers/board-backend/domain/user"
-	"github.com/ukrainian-brothers/board-backend/internal/advert_repo"
 )
 
 type AddAdvert struct {
-	AdvertRepo advert_repo.Repository
+	AdvertRepo advert.Repository
 }
 
-func NewAddAdvert(advertRepo advert_repo.Repository) *AddAdvert {
+func NewAddAdvert(advertRepo advert.Repository) *AddAdvert {
 	return &AddAdvert{AdvertRepo: advertRepo}
 }
 

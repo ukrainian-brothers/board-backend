@@ -31,8 +31,8 @@ type AdvertLog struct {
 
 type Advert struct {
 	ID          uuid.UUID
-	Advert      domain.Advert
-	Creator     user.User
+	Details     domain.AdvertDetails
+	User        *user.User
 	CreatedAt   time.Time
 	UpdatedAt   *time.Time
 	DestroyedAt *time.Time
@@ -45,7 +45,7 @@ func WithContactDetails(contactDetails domain.ContactDetails) AdvertOption {
 		if contactDetails.IsEmpty() {
 			return ContactEmptyErr
 		}
-		advert.Advert.ContactDetails = contactDetails
+		advert.Details.ContactDetails = contactDetails
 		return nil
 	}
 }
@@ -55,7 +55,7 @@ func NewAdvert(user *user.User, title string, description string, advertType dom
 		return nil, NoUserProvidedErr
 	}
 
-	advert := &Advert{}
+	advert := &Advert{ID: uuid.New()}
 
 	for _, option := range opts {
 		err := option(advert)
@@ -67,13 +67,13 @@ func NewAdvert(user *user.User, title string, description string, advertType dom
 	if title == "" || description == "" {
 		return nil, MissingBasicInfoErr
 	}
+	advert.User = user
+	advert.Details.Title = title
+	advert.Details.Description = description
+	advert.Details.Type = advertType
 
-	advert.Advert.Title = title
-	advert.Advert.Description = description
-	advert.Advert.Type = advertType
-
-	if advert.Advert.ContactDetails.IsEmpty() {
-		advert.Advert.ContactDetails = user.ContactDetails
+	if advert.Details.ContactDetails.IsEmpty() {
+		advert.Details.ContactDetails = user.ContactDetails
 	}
 
 	return advert, nil
