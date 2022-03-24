@@ -1,5 +1,5 @@
 .idea/
-config
+config/
 postgres-data/
 
 .env

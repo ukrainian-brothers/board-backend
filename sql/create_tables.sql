@@ -36,3 +36,5 @@ alter table adverts
 create unique index users_id_uindex
     on users (id);
 
+create unique index adverts_id_uindex
+    on adverts (id);
