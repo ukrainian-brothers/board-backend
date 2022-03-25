@@ -9,8 +9,8 @@ type AddUser struct {
 	UserRepo user.Repository
 }
 
-func NewAddUser(userRepo user.Repository) *AddUser {
-	return &AddUser{UserRepo: userRepo}
+func NewAddUser(userRepo user.Repository) AddUser {
+	return AddUser{UserRepo: userRepo}
 }
 
 func (s AddUser) Execute(ctx context.Context, user *user.User) error {
