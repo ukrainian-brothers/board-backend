@@ -13,6 +13,7 @@ import (
 )
 
 func main() {
+	logger := log.NewEntry(log.New())
 
 	cfg, err := common.NewConfigFromFile("config/configuration.local.json")
 	if err != nil {
@@ -35,6 +36,7 @@ func main() {
 
 	router := mux.NewRouter()
 	router.Use(api.BodyLimitMiddleware)
+	router.Use(api.LoggingMiddleware(logger))
 	api.NewUserAPI(router, app)
 
 	srv := &http.Server{
