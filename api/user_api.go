@@ -16,7 +16,7 @@ type UserAPI struct {
 }
 
 func NewUserAPI(r *mux.Router, app application.Application) *UserAPI {
-	usrApi := UserAPI{r: r}
+	usrApi := UserAPI{r: r, app: app}
 	r.HandleFunc("/api/user/register", usrApi.register).Methods("POST")
 	r.HandleFunc("/api/user/login", usrApi.login).Methods("POST")
 	return &usrApi
@@ -62,7 +62,7 @@ func (u UserAPI) register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	WriteJSON(w, struct{
+	WriteJSON(w, struct {
 		Success bool
 	}{Success: true})
 	return
