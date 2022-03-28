@@ -28,9 +28,9 @@ func WriteJSON(w http.ResponseWriter, dataStruct interface{}) {
 }
 
 func WriteError(w http.ResponseWriter, error HttpError) {
-	w.WriteHeader(errorsMap[error])
 	errStruct := errorStruct{Error: error}
 	WriteJSON(w, errStruct)
+	w.WriteHeader(errorsMap[error])
 }
 
 type HttpError string
