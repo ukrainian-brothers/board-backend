@@ -37,7 +37,7 @@ func main() {
 	router := mux.NewRouter()
 	router.Use(api.BodyLimitMiddleware)
 	router.Use(api.LoggingMiddleware(logger))
-	api.NewUserAPI(router, app)
+	api.NewUserAPI(router, logger, app)
 
 	srv := &http.Server{
 		Handler: router,

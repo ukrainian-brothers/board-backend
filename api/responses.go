@@ -10,11 +10,11 @@ type errorStruct struct {
 	Error HttpError `json:"error"`
 }
 
-func WriteJSON(w http.ResponseWriter, dataStruct interface{}) {
+func WriteJSON(w http.ResponseWriter, statusCode int, dataStruct interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	marshal, err := json.Marshal(dataStruct)
+	w.WriteHeader(statusCode)
 	if err != nil {
-		w.WriteHeader(errorsMap[InternalError])
 		newError := errorStruct{Error: InternalError}
 		bytes, _ := json.Marshal(newError)
 
@@ -23,14 +23,13 @@ func WriteJSON(w http.ResponseWriter, dataStruct interface{}) {
 	}
 	_, err = w.Write(marshal)
 	if err != nil {
-		log.WithError(err).Error("writting http output failed")
+		log.WithError(err).Error("writing http output failed")
 	}
 }
 
 func WriteError(w http.ResponseWriter, error HttpError) {
 	errStruct := errorStruct{Error: error}
-	WriteJSON(w, errStruct)
-	w.WriteHeader(errorsMap[error])
+	WriteJSON(w, errorsMap[error], errStruct)
 }
 
 type HttpError string
