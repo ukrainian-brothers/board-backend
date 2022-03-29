@@ -87,7 +87,7 @@ func TestGetById(t *testing.T) {
 		{
 			name: "EXISTING_USER",
 			user: &user.User{
-				ID:       uuid.MustParse("69129a87-cccb-49f0-98c8-fc9b7a5e04dc"),
+				ID:       uuid.New(),
 				Login:    "foo",
 				Password: createString("foobar"),
 				Person: domain.Person{
@@ -100,17 +100,10 @@ func TestGetById(t *testing.T) {
 				},
 			},
 			pre: func(t *testing.T, user *user.User) {
-				usr := internalUser.UserDB{
-					ID:          user.ID,
-					Login:       user.Login,
-					Password:    user.Password,
-					FirstName:   user.Person.FirstName,
-					Surname:     user.Person.Surname,
-					Mail:        createString("foo@gmail.com"),
-					PhoneNumber: createString("+482222222"),
-				}
+				usrDB := internalUser.UserDB{}
+				usrDB.LoadUser(user)
 
-				err = db.Insert(&usr)
+				err = db.Insert(&usrDB)
 				assert.NoError(t, err)
 			},
 			cleanUp: func(t *testing.T, id string) {
@@ -122,7 +115,7 @@ func TestGetById(t *testing.T) {
 		{
 			name: "NOT_EXISTING_USER",
 			user: &user.User{
-				ID: uuid.MustParse("5e8d9731-2437-4ba0-810e-468f983e1a0b"),
+				ID: uuid.New(),
 			},
 			cleanUp:     func(t *testing.T, id string) {},
 			pre:         func(t *testing.T, user *user.User) {},
@@ -145,7 +138,7 @@ func TestGetById(t *testing.T) {
 	}
 }
 
-func TestGetByLogin(t *testing.T) { // TODO: Fix this test..
+func TestGetByLogin(t *testing.T) {
 	cfg, err := common.NewConfigFromFile("../../config/configuration.test.local.json")
 	assert.NoError(t, err)
 
@@ -156,68 +149,63 @@ func TestGetByLogin(t *testing.T) { // TODO: Fix this test..
 
 	type testCase struct {
 		name        string
-		pre         func(t *testing.T) (result *user.User)
-		cleanUp     func(t *testing.T, id string)
+		user        *user.User
+		pre         func(t *testing.T, usr *user.User)
+		cleanUp     func(t *testing.T, usr *user.User)
 		expectedErr error
 	}
 
 	testCases := []testCase{
 		{
-			name: "EXISTING_USER",
-			pre: func(t *testing.T) (result *user.User) {
-				var usr = user.User{
-					ID:       uuid.MustParse("69129a87-cccb-49f0-98c8-fc9b7a5e04dc"),
-					Login:    "the_login",
-					Password: createString("foobar"),
-					Person: domain.Person{
-						FirstName: "Foo",
-						Surname:   "Bar",
-					},
-					ContactDetails: domain.ContactDetails{
-						Mail:        createString("foo@gmail.com"),
-						PhoneNumber: createString("+482222222"),
-					},
-				}
-
-				err = db.Insert(&usr)
-				assert.NoError(t, err)
-
-				return &usr
+			name: "existing user",
+			user: &user.User{
+				ID:       uuid.MustParse("69129a87-cccb-49f0-98c8-fc9b7a5e04dc"),
+				Login:    "the_login",
+				Password: createString("foobar"),
+				Person: domain.Person{
+					FirstName: "Foo",
+					Surname:   "Bar",
+				},
+				ContactDetails: domain.ContactDetails{
+					Mail:        createString("foo@gmail.com"),
+					PhoneNumber: createString("+482222222"),
+				},
 			},
-			cleanUp: func(t *testing.T, id string) {
-				_, err := db.Exec("DELETE FROM users WHERE id=$1", id)
+			pre: func(t *testing.T, usr *user.User) {
+				usrDB := internalUser.UserDB{}
+				usrDB.LoadUser(usr)
+				err = db.Insert(&usrDB)
+				assert.NoError(t, err)
+			},
+			cleanUp: func(t *testing.T, usr *user.User) {
+				_, err := db.Exec("DELETE FROM users WHERE id=$1", usr.ID)
 				assert.NoError(t, err)
 			},
 			expectedErr: nil,
 		},
 		{
-			name: "NOT_EXISTING_USER",
-			pre: func(t *testing.T) (result *user.User) {
-				result = &user.User{
-					ID: uuid.MustParse("5e8d9731-2437-4ba0-810e-468f983e1a0b"),
-				}
-
-				return result
+			name: "not existing user",
+			user: &user.User{
+				ID: uuid.New(),
+				Login: "this_user_does_not_exists",
 			},
-			cleanUp: func(t *testing.T, id string) {
-			},
+			pre: func(t *testing.T, usr *user.User) {},
+			cleanUp: func(t *testing.T, usr *user.User) {},
 			expectedErr: sql.ErrNoRows,
 		},
 	}
 
 	for _, tC := range testCases {
 		t.Run(tC.name, func(t *testing.T) {
-			t.Parallel()
+			tC.pre(t, tC.user)
 
-			testUser := tC.pre(t)
-
-			usr, err := repo.GetByLogin(context.Background(), testUser.Login)
+			usr, err := repo.GetByLogin(context.Background(), tC.user.Login)
 			assert.ErrorIs(t, err, tC.expectedErr)
 			if tC.expectedErr == nil {
-				user.Assert(t, testUser, usr)
+				user.Assert(t, tC.user, usr)
 			}
 
-			tC.cleanUp(t, testUser.ID.String())
+			tC.cleanUp(t, tC.user)
 		})
 	}
 }
@@ -251,7 +239,7 @@ func TestUserExists(t *testing.T) {
 				ID:       uuid.New(),
 				Login:    "login",
 				Password: createString("pass"),
-				Person:   domain.Person{"abc", "dawdwa"},
+				Person:   domain.Person{FirstName: "abc", Surname: "dawdwa"},
 				ContactDetails: domain.ContactDetails{
 					Mail: createString("aaaa@wp.pl"),
 				},
@@ -267,19 +255,19 @@ func TestUserExists(t *testing.T) {
 				assert.NoError(t, err)
 			},
 			expected: expected{
-				err: nil,
+				err:    nil,
 				exists: true,
 			},
 		},
 		{
 			name: "not exists",
 			user: &user.User{
-				Login:    "login",
+				Login: "login",
 			},
-			pre: func(t *testing.T, usr *user.User) {},
+			pre:     func(t *testing.T, usr *user.User) {},
 			cleanUp: func(t *testing.T, usr *user.User) {},
 			expected: expected{
-				err: nil,
+				err:    nil,
 				exists: false,
 			},
 		},

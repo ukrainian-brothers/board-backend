@@ -9,7 +9,6 @@ import (
 	"github.com/ukrainian-brothers/board-backend/domain/user"
 )
 
-//@TODO: Wrapped errors in methods
 type PostgresRepository struct {
 	db *gorp.DbMap
 }
