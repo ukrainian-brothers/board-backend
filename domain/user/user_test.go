@@ -52,10 +52,10 @@ func TestUserCreation(t *testing.T) {
 		},
 	}
 
-	for _, test := range testCases {
-		t.Run(test.testName, func(t *testing.T) {
-			_, err := NewUser(test.firstName, test.surname, test.login, test.password, test.contactDetails)
-			assert.Equal(t, test.expectedErr, err)
+	for _, tC := range testCases {
+		t.Run(tC.testName, func(t *testing.T) {
+			_, err := NewUser(tC.firstName, tC.surname, tC.login, tC.password, tC.contactDetails)
+			assert.Equal(t, tC.expectedErr, err)
 		})
 
 	}

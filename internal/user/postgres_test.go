@@ -18,7 +18,7 @@ func newStringPtr(s string) *string {
 }
 
 func TestUserPostgresAdd(t *testing.T) {
-	cfg, err := common.NewConfigFromFile("../../config/configuration.test.local.json")
+	cfg, err := common.NewConfigFromFile("../../config/configuration.tC.local.json")
 	assert.NoError(t, err)
 
 	db, err := common.InitPostgres(&cfg.Postgres)
@@ -57,11 +57,11 @@ func TestUserPostgresAdd(t *testing.T) {
 		},
 	}
 
-	for _, test := range testCases {
-		t.Run(test.name, func(t *testing.T) {
-			err := repo.Add(context.Background(), test.user)
-			assert.Equal(t, test.expectedErr, err)
-			test.cleanUp(t, test.user.ID.String())
+	for _, tC := range testCases {
+		t.Run(tC.name, func(t *testing.T) {
+			err := repo.Add(context.Background(), tC.user)
+			assert.Equal(t, tC.expectedErr, err)
+			tC.cleanUp(t, tC.user.ID.String())
 		})
 	}
 }
@@ -107,7 +107,7 @@ func TestGetById(t *testing.T) {
 				assert.NoError(t, err)
 			},
 			cleanUp: func(t *testing.T, id string) {
-				_, err := db.Exec("DELETE FROM users WHERE id=$1", id)
+				_, err := db.Exec(" FROM users WHERE id=$1", id)
 				assert.NoError(t, err)
 			},
 			expectedErr: nil,
@@ -178,7 +178,7 @@ func TestGetByLogin(t *testing.T) {
 				assert.NoError(t, err)
 			},
 			cleanUp: func(t *testing.T, usr *user.User) {
-				_, err := db.Exec("DELETE FROM users WHERE id=$1", usr.ID)
+				_, err := db.Exec(" FROM users WHERE id=$1", usr.ID)
 				assert.NoError(t, err)
 			},
 			expectedErr: nil,

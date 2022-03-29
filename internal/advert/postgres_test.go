@@ -22,7 +22,7 @@ func getContactDetails() domain.ContactDetails {
 }
 
 func TestAdvertPostgresAdd(t *testing.T) {
-	cfg, err := common.NewConfigFromFile("../../config/configuration.test.local.json")
+	cfg, err := common.NewConfigFromFile("../../config/configuration.tC.local.json")
 	assert.NoError(t, err)
 
 	db, err := common.InitPostgres(&cfg.Postgres)
@@ -78,12 +78,12 @@ func TestAdvertPostgresAdd(t *testing.T) {
 		},
 	}
 
-	for _, test := range testCases {
-		t.Run(test.name, func(t *testing.T) {
-			test.pre(t, test.advert)
-			err := repo.Add(context.Background(), test.advert)
-			test.cleanUp(t, test.advert.ID.String(), test.advert.User.ID.String())
-			assert.ErrorIs(t, test.expectedErr, err)
+	for _, tC := range testCases {
+		t.Run(tC.name, func(t *testing.T) {
+			tC.pre(t, tC.advert)
+			err := repo.Add(context.Background(), tC.advert)
+			tC.cleanUp(t, tC.advert.ID.String(), tC.advert.User.ID.String())
+			assert.ErrorIs(t, tC.expectedErr, err)
 		})
 	}
 }

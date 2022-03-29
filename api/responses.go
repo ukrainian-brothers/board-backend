@@ -7,7 +7,7 @@ import (
 )
 
 type errorStruct struct {
-	Error int `json:"error,omitempty"`
+	Error string `json:"error,omitempty"`
 	Details string `json:"errorDetails,omitempty"`
 }
 
@@ -16,7 +16,7 @@ func WriteJSON(w http.ResponseWriter, statusCode int, dataStruct interface{}) {
 	marshal, err := json.Marshal(dataStruct)
 	w.WriteHeader(statusCode)
 	if err != nil {
-		newError := errorStruct{Error: http.StatusInternalServerError}
+		newError := errorStruct{Error: http.StatusText(http.StatusInternalServerError)}
 		bytes, _ := json.Marshal(newError)
 
 		_, _ = w.Write(bytes)
@@ -29,6 +29,6 @@ func WriteJSON(w http.ResponseWriter, statusCode int, dataStruct interface{}) {
 }
 
 func WriteError(w http.ResponseWriter, statusCode int, errorDetails string) {
-	errStruct := errorStruct{Error: statusCode, Details: errorDetails}
+	errStruct := errorStruct{Error: http.StatusText(statusCode), Details: errorDetails}
 	WriteJSON(w, statusCode, errStruct)
 }

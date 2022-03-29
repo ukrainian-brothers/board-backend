@@ -18,7 +18,7 @@ type UserAPI struct {
 
 func NewUserAPI(r *mux.Router, log *log.Entry, app application.Application) *UserAPI {
 	usrApi := UserAPI{r: r, app: app, log: log}
-	r.HandleFunc("/api/user/register", usrApi.register).Methods("POST")
+	r.HandleFunc("/api/user/register", usrApi.Register).Methods("POST")
 	r.HandleFunc("/api/user/login", usrApi.login).Methods("POST")
 	return &usrApi
 }
@@ -32,7 +32,7 @@ type registerPayload struct {
 	Phone     string `json:"phone"`
 }
 
-func (u UserAPI) register(w http.ResponseWriter, r *http.Request) {
+func (u UserAPI) Register(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	dec := json.NewDecoder(r.Body)
