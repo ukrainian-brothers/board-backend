@@ -13,7 +13,7 @@ import (
 	"testing"
 )
 
-func createString(s string) *string {
+func newStringPtr(s string) *string {
 	return &s
 }
 
@@ -39,14 +39,14 @@ func TestUserPostgresAdd(t *testing.T) {
 			user: &user.User{
 				ID:       uuid.MustParse("6858fe22-2c04-4a13-bc75-eafeeb3cf767"),
 				Login:    "Adam",
-				Password: createString("awddwaawd"),
+				Password: newStringPtr("awddwaawd"),
 				Person: domain.Person{
 					FirstName: "Adam",
 					Surname:   "Małysz",
 				},
 				ContactDetails: domain.ContactDetails{
-					Mail:        createString("adam@wp.pl"),
-					PhoneNumber: createString("111222333"),
+					Mail:        newStringPtr("adam@wp.pl"),
+					PhoneNumber: newStringPtr("111222333"),
 				},
 			},
 			cleanUp: func(t *testing.T, id string) {
@@ -85,18 +85,18 @@ func TestGetById(t *testing.T) {
 
 	testCases := []testCase{
 		{
-			name: "EXISTING_USER",
+			name: "existing user",
 			user: &user.User{
 				ID:       uuid.New(),
 				Login:    "foo",
-				Password: createString("foobar"),
+				Password: newStringPtr("foobar"),
 				Person: domain.Person{
 					FirstName: "Foo",
 					Surname:   "Bar",
 				},
 				ContactDetails: domain.ContactDetails{
-					Mail:        createString("foo@gmail.com"),
-					PhoneNumber: createString("+482222222"),
+					Mail:        newStringPtr("foo@gmail.com"),
+					PhoneNumber: newStringPtr("+482222222"),
 				},
 			},
 			pre: func(t *testing.T, user *user.User) {
@@ -113,7 +113,7 @@ func TestGetById(t *testing.T) {
 			expectedErr: nil,
 		},
 		{
-			name: "NOT_EXISTING_USER",
+			name: "not existing user",
 			user: &user.User{
 				ID: uuid.New(),
 			},
@@ -159,16 +159,16 @@ func TestGetByLogin(t *testing.T) {
 		{
 			name: "existing user",
 			user: &user.User{
-				ID:       uuid.MustParse("69129a87-cccb-49f0-98c8-fc9b7a5e04dc"),
+				ID:       uuid.New(),
 				Login:    "the_login",
-				Password: createString("foobar"),
+				Password: newStringPtr("foobar"),
 				Person: domain.Person{
 					FirstName: "Foo",
 					Surname:   "Bar",
 				},
 				ContactDetails: domain.ContactDetails{
-					Mail:        createString("foo@gmail.com"),
-					PhoneNumber: createString("+482222222"),
+					Mail:        newStringPtr("foo@gmail.com"),
+					PhoneNumber: newStringPtr("+482222222"),
 				},
 			},
 			pre: func(t *testing.T, usr *user.User) {
@@ -238,10 +238,10 @@ func TestUserExists(t *testing.T) {
 			user: &user.User{
 				ID:       uuid.New(),
 				Login:    "login",
-				Password: createString("pass"),
+				Password: newStringPtr("pass"),
 				Person:   domain.Person{FirstName: "abc", Surname: "dawdwa"},
 				ContactDetails: domain.ContactDetails{
-					Mail: createString("aaaa@wp.pl"),
+					Mail: newStringPtr("aaaa@wp.pl"),
 				},
 			},
 			pre: func(t *testing.T, usr *user.User) {

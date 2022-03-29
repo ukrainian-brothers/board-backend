@@ -51,7 +51,7 @@ func TestAdvertPostgresAdd(t *testing.T) {
 					ContactDetails: getContactDetails(),
 				},
 				User: &user.User{
-					ID:       uuid.MustParse("69129a87-cccb-49f0-98c8-fc9b7a5e04dc"),
+					ID:       uuid.New(),
 					Login:    "the_login",
 					Password: newStringPtr("foobar"),
 					Person: domain.Person{
@@ -63,17 +63,9 @@ func TestAdvertPostgresAdd(t *testing.T) {
 				CreatedAt: time.Now(),
 			},
 			pre: func(t *testing.T, adv *advert.Advert) {
-				usr := adv.User
-				usrForDB := internalUser.UserDB{
-					ID:          usr.ID,
-					Login:       usr.Login,
-					Password:    usr.Password,
-					FirstName:   usr.Person.FirstName,
-					Surname:     usr.Person.Surname,
-					Mail:        usr.ContactDetails.Mail,
-					PhoneNumber: usr.ContactDetails.PhoneNumber,
-				}
-				err = db.Insert(&usrForDB)
+				usrDB := internalUser.UserDB{}
+				usrDB.LoadUser(adv.User)
+				err = db.Insert(&usrDB)
 				assert.NoError(t, err)
 			},
 			cleanUp: func(t *testing.T, advertID string, userID string) {
