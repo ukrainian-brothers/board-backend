@@ -24,6 +24,16 @@ type UserDB struct {
 	PhoneNumber *string   `db:"phone_number"`
 }
 
+func (usrDB *UserDB) LoadUser(usr *user.User) {
+	usrDB.ID = usr.ID
+	usrDB.Login = usr.Login
+	usrDB.Password = usr.Password
+	usrDB.FirstName = usr.Person.FirstName
+	usrDB.Surname = usr.Person.Surname
+	usrDB.Mail = usr.ContactDetails.Mail
+	usrDB.PhoneNumber = usr.ContactDetails.PhoneNumber
+}
+
 func NewPostgresUserRepository(db *gorp.DbMap) *PostgresRepository {
 	db.AddTableWithName(UserDB{}, "users").SetKeys(false, "id")
 	return &PostgresRepository{db: db}
@@ -97,6 +107,14 @@ func (repo PostgresRepository) Add(ctx context.Context, user *user.User) error {
 	return nil
 }
 
+func (repo PostgresRepository) Exists(ctx context.Context, login string) (bool, error) {
+	sqlExecutor := repo.db.WithContext(ctx)
+	exists, err := sqlExecutor.SelectStr(`select exists(select 1 from users where login=$1)`, login)
+	return exists=="true", err
+}
+
 func (repo PostgresRepository) Delete(ctx context.Context, id uuid.UUID) error {
 	panic("implement me")
 }
+
+

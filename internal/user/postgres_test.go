@@ -145,7 +145,7 @@ func TestGetById(t *testing.T) {
 	}
 }
 
-func TestGetByLogin(t *testing.T) {
+func TestGetByLogin(t *testing.T) { // TODO: Fix this test..
 	cfg, err := common.NewConfigFromFile("../../config/configuration.test.local.json")
 	assert.NoError(t, err)
 
@@ -218,6 +218,81 @@ func TestGetByLogin(t *testing.T) {
 			}
 
 			tC.cleanUp(t, testUser.ID.String())
+		})
+	}
+}
+
+func TestUserExists(t *testing.T) {
+	cfg, err := common.NewConfigFromFile("../../config/configuration.test.local.json")
+	assert.NoError(t, err)
+
+	db, err := common.InitPostgres(&cfg.Postgres)
+	require.NoError(t, err)
+
+	repo := internalUser.NewPostgresUserRepository(db)
+
+	type expected struct {
+		err    error
+		exists bool
+	}
+
+	type testCase struct {
+		name     string
+		user     *user.User
+		pre      func(t *testing.T, usr *user.User)
+		cleanUp  func(t *testing.T, usr *user.User)
+		expected expected
+	}
+
+	testCases := []testCase{
+		{
+			name: "exists",
+			user: &user.User{
+				ID:       uuid.New(),
+				Login:    "login",
+				Password: createString("pass"),
+				Person:   domain.Person{"abc", "dawdwa"},
+				ContactDetails: domain.ContactDetails{
+					Mail: createString("aaaa@wp.pl"),
+				},
+			},
+			pre: func(t *testing.T, usr *user.User) {
+				userDB := internalUser.UserDB{}
+				userDB.LoadUser(usr)
+				err := db.Insert(&userDB)
+				assert.NoError(t, err)
+			},
+			cleanUp: func(t *testing.T, usr *user.User) {
+				_, err := db.Exec("DELETE FROM users WHERE id=$1", usr.ID)
+				assert.NoError(t, err)
+			},
+			expected: expected{
+				err: nil,
+				exists: true,
+			},
+		},
+		{
+			name: "not exists",
+			user: &user.User{
+				Login:    "login",
+			},
+			pre: func(t *testing.T, usr *user.User) {},
+			cleanUp: func(t *testing.T, usr *user.User) {},
+			expected: expected{
+				err: nil,
+				exists: false,
+			},
+		},
+	}
+
+	for _, tC := range testCases {
+		t.Run(tC.name, func(t *testing.T) {
+			tC.pre(t, tC.user)
+			exists, err := repo.Exists(context.Background(), tC.user.Login)
+			assert.Equal(t, tC.expected.err, err)
+			assert.Equal(t, tC.expected.exists, exists)
+			tC.cleanUp(t, tC.user)
+
 		})
 	}
 }
