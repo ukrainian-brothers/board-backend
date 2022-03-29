@@ -31,7 +31,9 @@ func main() {
 		Commands: application.Commands{
 			AddUser: board.NewAddUser(userRepo),
 		},
-		Queries:  application.Queries{},
+		Queries:  application.Queries{
+			UserExists: board.NewUserExists(userRepo),
+		},
 	}
 
 	router := mux.NewRouter()

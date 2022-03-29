@@ -44,28 +44,43 @@ func (u UserAPI) register(w http.ResponseWriter, r *http.Request) {
 	contactDetails, err := domain.NewContactDetails(payload.Mail, payload.Phone)
 	if err != nil {
 		u.log.WithError(err).Error("failed creating contact details")
-		WriteError(w, InvalidPayload)
+		WriteError(w, http.StatusUnprocessableEntity, "missing contact details")
 		return
 	}
+
+	u.log = u.log.WithFields(log.Fields{
+		"login": payload.Login,
+		"mail":  payload.Mail,
+	})
 
 	usr, err := user.NewUser(payload.Firstname, payload.Surname, payload.Login, payload.Password, contactDetails)
 	if err != nil {
 		u.log.WithError(err).Error("failed creating User struct")
-		WriteError(w, InvalidPayload)
+		WriteError(w, http.StatusUnprocessableEntity, "")
+		return
+	}
+
+	userExists, err := u.app.Queries.UserExists.Execute(ctx, usr.Login)
+	if err != nil {
+		u.log.WithError(err).Error("failed to execute UserExists query")
+		WriteError(w, http.StatusInternalServerError, "")
+		return
+	}
+
+	if userExists {
+		u.log.Info("user already exists")
+		WriteError(w, http.StatusUnprocessableEntity, "user already exists")
 		return
 	}
 
 	err = u.app.Commands.AddUser.Execute(ctx, usr)
 	if err != nil {
 		u.log.WithError(err).Error("failed to execute AddUser command")
-		WriteError(w, InternalError)
+		WriteError(w, http.StatusInternalServerError, "")
 		return
 	}
 
-	//WriteJSON(w, 200, struct {
-	//	Success bool
-	//}{Success: true}
-	WriteJSON(w, 200, map[string]string{"status": "ok"})
+	WriteJSON(w, 201, map[string]string{"status": "ok"})
 	return
 }
 func (u UserAPI) login(w http.ResponseWriter, r *http.Request) {}

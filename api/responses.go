@@ -7,7 +7,8 @@ import (
 )
 
 type errorStruct struct {
-	Error HttpError `json:"error"`
+	Error int `json:"error,omitempty"`
+	Details string `json:"errorDetails,omitempty"`
 }
 
 func WriteJSON(w http.ResponseWriter, statusCode int, dataStruct interface{}) {
@@ -15,7 +16,7 @@ func WriteJSON(w http.ResponseWriter, statusCode int, dataStruct interface{}) {
 	marshal, err := json.Marshal(dataStruct)
 	w.WriteHeader(statusCode)
 	if err != nil {
-		newError := errorStruct{Error: InternalError}
+		newError := errorStruct{Error: http.StatusInternalServerError}
 		bytes, _ := json.Marshal(newError)
 
 		_, _ = w.Write(bytes)
@@ -27,24 +28,7 @@ func WriteJSON(w http.ResponseWriter, statusCode int, dataStruct interface{}) {
 	}
 }
 
-func WriteError(w http.ResponseWriter, error HttpError) {
-	errStruct := errorStruct{Error: error}
-	WriteJSON(w, errorsMap[error], errStruct)
-}
-
-type HttpError string
-
-const (
-	InternalError       HttpError = "internal_error"
-	Unauthorized                  = "unauthorised"
-	BadRequest                    = "bad_request"
-	UnprocessableEntity           = "unprocessable_entity"
-	InvalidPayload                = "unprocessable_entity"
-)
-
-var errorsMap = map[HttpError]int{
-	InternalError:       500,
-	Unauthorized:        401,
-	BadRequest:          400,
-	UnprocessableEntity: 422,
+func WriteError(w http.ResponseWriter, statusCode int, errorDetails string) {
+	errStruct := errorStruct{Error: statusCode, Details: errorDetails}
+	WriteJSON(w, statusCode, errStruct)
 }

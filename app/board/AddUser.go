@@ -6,18 +6,14 @@ import (
 )
 
 type AddUser struct {
-	UserRepo user.Repository
+	repo user.Repository
 }
 
 func NewAddUser(userRepo user.Repository) AddUser {
-	return AddUser{UserRepo: userRepo}
+	return AddUser{repo: userRepo}
 }
 
 func (s AddUser) Execute(ctx context.Context, user *user.User) error {
-	err := s.UserRepo.Add(ctx, user)
-	if err != nil {
-		return err
-	}
-	return nil
+	return s.repo.Add(ctx, user)
 }
 
