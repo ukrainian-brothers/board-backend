@@ -11,14 +11,14 @@ import (
 	"time"
 )
 
-type PostgresRepository struct {
+type PostgresAdvertRepository struct {
 	db *gorp.DbMap
 }
 
-func NewPostgresAdvertRepository(db *gorp.DbMap) *PostgresRepository {
+func NewPostgresAdvertRepository(db *gorp.DbMap) *PostgresAdvertRepository {
 	db.AddTableWithName(advertDB{}, "adverts").SetKeys(false, "id")
 
-	return &PostgresRepository{
+	return &PostgresAdvertRepository{
 		db: db,
 	}
 }
@@ -40,7 +40,7 @@ type advertDB struct {
 	DestroyedAt    *time.Time            `db:"destroyed_at"`
 }
 
-func (repo PostgresRepository) Get(ctx context.Context, id uuid.UUID) (advert.Advert, error) {
+func (repo PostgresAdvertRepository) Get(ctx context.Context, id uuid.UUID) (advert.Advert, error) {
 	repo.db.WithContext(ctx)
 
 	type advertAndUser struct {
@@ -85,7 +85,7 @@ func (repo PostgresRepository) Get(ctx context.Context, id uuid.UUID) (advert.Ad
 	}, nil
 }
 
-func (repo PostgresRepository) Add(ctx context.Context, advert *advert.Advert) error {
+func (repo PostgresAdvertRepository) Add(ctx context.Context, advert *advert.Advert) error {
 	advertDb := advertDB{
 		ID:             advert.ID,
 		UserID:         advert.User.ID,
@@ -105,6 +105,6 @@ func (repo PostgresRepository) Add(ctx context.Context, advert *advert.Advert) e
 	return nil
 }
 
-func (repo PostgresRepository) Delete(ctx context.Context, id uuid.UUID) error {
+func (repo PostgresAdvertRepository) Delete(ctx context.Context, id uuid.UUID) error {
 	panic("implement me")
 }

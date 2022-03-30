@@ -6,10 +6,10 @@ import (
 )
 
 type AddUser struct {
-	repo user.Repository
+	repo user.UserRepository
 }
 
-func NewAddUser(userRepo user.Repository) AddUser {
+func NewAddUser(userRepo user.UserRepository) AddUser {
 	return AddUser{repo: userRepo}
 }
 

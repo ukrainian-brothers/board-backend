@@ -22,7 +22,7 @@ func getContactDetails() domain.ContactDetails {
 }
 
 func TestAdvertPostgresAdd(t *testing.T) {
-	cfg, err := common.NewConfigFromFile("../../config/configuration.tC.local.json")
+	cfg, err := common.NewConfigFromFile("../../config/configuration.test.local.json")
 	assert.NoError(t, err)
 
 	db, err := common.InitPostgres(&cfg.Postgres)
