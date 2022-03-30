@@ -3,7 +3,7 @@ package api
 import (
 	"encoding/json"
 	"github.com/gorilla/mux"
-	log "github.com/sirupsen/logrus"
+	logrus "github.com/sirupsen/logrus"
 	application "github.com/ukrainian-brothers/board-backend/app"
 	"github.com/ukrainian-brothers/board-backend/domain"
 	"github.com/ukrainian-brothers/board-backend/domain/user"
@@ -11,12 +11,12 @@ import (
 )
 
 type UserAPI struct {
-	log *log.Entry
+	log *logrus.Entry
 	r   *mux.Router
 	app application.Application
 }
 
-func NewUserAPI(r *mux.Router, log *log.Entry, app application.Application) *UserAPI {
+func NewUserAPI(r *mux.Router, log *logrus.Entry, app application.Application) *UserAPI {
 	usrApi := UserAPI{r: r, app: app, log: log}
 	r.HandleFunc("/api/user/register", usrApi.Register).Methods("POST")
 	r.HandleFunc("/api/user/login", usrApi.login).Methods("POST")
@@ -34,6 +34,7 @@ type registerPayload struct {
 
 func (u UserAPI) Register(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
+	log := u.log
 
 	dec := json.NewDecoder(r.Body)
 	dec.DisallowUnknownFields()
@@ -43,39 +44,39 @@ func (u UserAPI) Register(w http.ResponseWriter, r *http.Request) {
 
 	contactDetails, err := domain.NewContactDetails(payload.Mail, payload.Phone)
 	if err != nil {
-		u.log.WithError(err).Error("failed creating contact details")
+		log.WithError(err).Error("failed creating contact details")
 		WriteError(w, http.StatusUnprocessableEntity, "missing contact details")
 		return
 	}
 
-	u.log = u.log.WithFields(log.Fields{
+	log = log.WithFields(logrus.Fields{
 		"login": payload.Login,
 		"mail":  payload.Mail,
 	})
 
 	usr, err := user.NewUser(payload.Firstname, payload.Surname, payload.Login, payload.Password, contactDetails)
 	if err != nil {
-		u.log.WithError(err).Error("failed creating User struct")
+		log.WithError(err).Error("failed creating User struct")
 		WriteError(w, http.StatusUnprocessableEntity, "")
 		return
 	}
 
 	userExists, err := u.app.Queries.UserExists.Execute(ctx, usr.Login)
 	if err != nil {
-		u.log.WithError(err).Error("failed to execute UserExists query")
+		log.WithError(err).Error("failed to execute UserExists query")
 		WriteError(w, http.StatusInternalServerError, "")
 		return
 	}
 
 	if userExists {
-		u.log.Info("user already exists")
+		log.Info("user already exists")
 		WriteError(w, http.StatusUnprocessableEntity, "user already exists")
 		return
 	}
 
 	err = u.app.Commands.AddUser.Execute(ctx, usr)
 	if err != nil {
-		u.log.WithError(err).Error("failed to execute AddUser command")
+		log.WithError(err).Error("failed to execute AddUser command")
 		WriteError(w, http.StatusInternalServerError, "")
 		return
 	}
