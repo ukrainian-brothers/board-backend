@@ -12,7 +12,6 @@ import (
 	"github.com/ukrainian-brothers/board-backend/domain/user"
 	"github.com/ukrainian-brothers/board-backend/internal/common"
 	internal_user "github.com/ukrainian-brothers/board-backend/internal/user"
-	"github.com/ukrainian-brothers/board-backend/mocks"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -24,8 +23,8 @@ func newStringPtr(s string) *string {
 	return &s
 }
 
-func getMockedRepo() mocks.UserRepository {
-	return mocks.UserRepository{}
+func getMockedRepo() internal_user.RepositoryMock {
+	return internal_user.RepositoryMock{}
 }
 
 func getPostgresRepo() (user.UserRepository, *gorp.DbMap) {
