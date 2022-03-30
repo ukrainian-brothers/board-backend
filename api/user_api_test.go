@@ -20,18 +20,18 @@ func TestRegistrationE2E(t *testing.T) {
 	}
 	type testCase struct {
 		name     string
-		payload  registerPayload
-		pre      func(t *testing.T, payload registerPayload)
-		cleanUp  func(t *testing.T, payload registerPayload)
+		payload  *registerPayload
+		pre      func(t *testing.T, payload *registerPayload)
+		cleanUp  func(t *testing.T, payload *registerPayload)
 		expected expected
 	}
 
 	testCases := []testCase{
 		{
 			name:    "no payload",
-			payload: registerPayload{},
-			pre:     func(t *testing.T, payload registerPayload) {},
-			cleanUp: func(t *testing.T, payload registerPayload) {},
+			payload: &registerPayload{},
+			pre:     func(t *testing.T, payload *registerPayload) {},
+			cleanUp: func(t *testing.T, payload *registerPayload) {},
 			expected: expected{
 				status: 422,
 				errorStruct: errorStruct{
@@ -41,25 +41,25 @@ func TestRegistrationE2E(t *testing.T) {
 			},
 		},
 		{
-			name:    "no personal data",
-			payload: registerPayload{
-				Login:     "the_new_user2115",
-				Password:  "pass",
-				Mail:      "mrosiak@wp.pl",
-				Phone:     "+48 111 222 333",
+			name: "no personal data",
+			payload: &registerPayload{
+				Login:    "the_new_user2115",
+				Password: "pass",
+				Mail:     "mrosiak@wp.pl",
+				Phone:    "+48 111 222 333",
 			},
-			pre:     func(t *testing.T, payload registerPayload) {},
-			cleanUp: func(t *testing.T, payload registerPayload) {},
+			pre:     func(t *testing.T, payload *registerPayload) {},
+			cleanUp: func(t *testing.T, payload *registerPayload) {},
 			expected: expected{
 				status: 422,
 				errorStruct: errorStruct{
-					Error:   "Unprocessable Entity",
+					Error: "Unprocessable Entity",
 				},
 			},
 		},
 		{
 			name: "success",
-			payload: registerPayload{
+			payload: &registerPayload{
 				Login:     "the_new_user2115",
 				Password:  "pass",
 				Firstname: "Mac",
@@ -67,8 +67,8 @@ func TestRegistrationE2E(t *testing.T) {
 				Mail:      "mrosiak@wp.pl",
 				Phone:     "+48 111 222 333",
 			},
-			pre: func(t *testing.T, payload registerPayload) {},
-			cleanUp: func(t *testing.T, payload registerPayload) {
+			pre: func(t *testing.T, payload *registerPayload) {},
+			cleanUp: func(t *testing.T, payload *registerPayload) {
 				_, err := db.Exec("DELETE FROM users WHERE login=$1", payload.Login)
 				assert.NoError(t, err)
 			},
@@ -78,7 +78,7 @@ func TestRegistrationE2E(t *testing.T) {
 		},
 		{
 			name: "already exists",
-			payload: registerPayload{
+			payload: &registerPayload{
 				Login:     "the_new_user2115",
 				Password:  "pass",
 				Firstname: "Mac",
@@ -86,7 +86,7 @@ func TestRegistrationE2E(t *testing.T) {
 				Mail:      "mrosiak@wp.pl",
 				Phone:     "+48 111 222 333",
 			},
-			pre: func(t *testing.T, payload registerPayload) {
+			pre: func(t *testing.T, payload *registerPayload) {
 				usrDB := internal_user.UserDB{
 					ID:          uuid.New(),
 					Login:       payload.Login,
@@ -99,7 +99,7 @@ func TestRegistrationE2E(t *testing.T) {
 				err := db.Insert(&usrDB)
 				assert.Nil(t, err)
 			},
-			cleanUp: func(t *testing.T, payload registerPayload) {
+			cleanUp: func(t *testing.T, payload *registerPayload) {
 				_, err := db.Exec("DELETE FROM users WHERE login=$1", payload.Login)
 				assert.NoError(t, err)
 			},
@@ -140,7 +140,7 @@ func TestRegistration(t *testing.T) {
 	type testCase struct {
 		name     string
 		mock     func()
-		payload  registerPayload
+		payload  *registerPayload
 		expected expected
 	}
 
@@ -150,16 +150,16 @@ func TestRegistration(t *testing.T) {
 			mock: func() {
 				userRepo.On("Exists", mock.Anything, mock.Anything).Return(false, errors.New("err"))
 			},
-			payload: registerPayload{
+			payload: &registerPayload{
 				Firstname: "Mac",
-				Surname: "Smith",
-				Mail:  "the_mail",
-				Phone: "+48 111 222 333",
+				Surname:   "Smith",
+				Mail:      "the_mail",
+				Phone:     "+48 111 222 333",
 			},
 			expected: expected{
 				status: 500,
 				errorStruct: errorStruct{
-					Error:   "Internal Server Error",
+					Error: "Internal Server Error",
 				},
 			},
 		},
@@ -169,16 +169,16 @@ func TestRegistration(t *testing.T) {
 				userRepo.On("Exists", mock.Anything, mock.Anything).Return(false, nil)
 				userRepo.On("Add", mock.Anything, mock.Anything).Return(errors.New("err"))
 			},
-			payload: registerPayload{
+			payload: &registerPayload{
 				Firstname: "Mac",
-				Surname: "Smith",
-				Mail:  "the_mail",
-				Phone: "+48 111 222 333",
+				Surname:   "Smith",
+				Mail:      "the_mail",
+				Phone:     "+48 111 222 333",
 			},
 			expected: expected{
 				status: 500,
 				errorStruct: errorStruct{
-					Error:   "Internal Server Error",
+					Error: "Internal Server Error",
 				},
 			},
 		},
@@ -196,4 +196,14 @@ func TestRegistration(t *testing.T) {
 			assert.Equal(t, tC.expected.errorStruct.Details, responseStruct.Details)
 		})
 	}
+}
+
+func TestRegistrationDecodingError(t *testing.T) {
+	userRepo := getMockedRepo()
+	server, client := createUserAPI(&userRepo)
+	responseStruct := errorStruct{}
+	resp := doRequest(t, client, "POST", fmt.Sprintf("%s/api/user/register", server.URL), byte(1), &responseStruct)
+	assert.Equal(t, 422, resp.StatusCode)
+	assert.Equal(t, "Unprocessable Entity", responseStruct.Error)
+	assert.Equal(t, "invalid payload", responseStruct.Details)
 }

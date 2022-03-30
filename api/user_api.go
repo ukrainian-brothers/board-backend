@@ -41,6 +41,11 @@ func (u UserAPI) Register(w http.ResponseWriter, r *http.Request) {
 
 	payload := registerPayload{}
 	err := dec.Decode(&payload)
+	if err != nil {
+		log.WithError(err).Error("failed decoding payload")
+		WriteError(w, http.StatusUnprocessableEntity, "invalid payload")
+		return
+	}
 
 	contactDetails, err := domain.NewContactDetails(payload.Mail, payload.Phone)
 	if err != nil {
