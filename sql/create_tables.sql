@@ -4,11 +4,11 @@ create table users
     id           varchar(36) not null
         constraint users_pk
             primary key,
-    password     varchar(32),
+    password     varchar(97),
     name         varchar(15),
     surname      varchar(15),
     mail         varchar(45),
-    phone_number varchar(12)
+    phone_number varchar(15)
 );
 
 alter table users
@@ -33,8 +33,12 @@ create table adverts
 alter table adverts
     owner to postgres;
 
+create unique index adverts_id_uindex
+    on adverts (id);
+
 create unique index users_id_uindex
     on users (id);
 
-create unique index adverts_id_uindex
-    on adverts (id);
+create unique index users_login_uindex
+    on users (login);
+
