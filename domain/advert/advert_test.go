@@ -99,12 +99,12 @@ func TestAdvertNew(t *testing.T) {
 		},
 	}
 
-	for _, test := range testCases {
-		t.Run(test.testName, func(t *testing.T) {
-			adv, err := NewAdvert(test.user, test.title, test.description, test.advertType, test.opts...)
-			assert.Equal(t, test.expectations.err, err)
+	for _, tC := range testCases {
+		t.Run(tC.testName, func(t *testing.T) {
+			adv, err := NewAdvert(tC.user, tC.title, tC.description, tC.advertType, tC.opts...)
+			assert.Equal(t, tC.expectations.err, err)
 			if err == nil {
-				assert.Equal(t, test.expectations.contactDetails, adv.Details.ContactDetails)
+				assert.Equal(t, tC.expectations.contactDetails, adv.Details.ContactDetails)
 			}
 		})
 

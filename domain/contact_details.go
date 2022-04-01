@@ -16,13 +16,21 @@ var (
 	phoneRegex        = regexp.MustCompile("^\\+[0-9]{2} [0-9]{3} [0-9]{3} [0-9]{3}$")
 )
 
-func NewContactDetails(mail *string, phoneNumber *string) (ContactDetails, error) {
+func NewContactDetails(mail, phoneNumber string) (ContactDetails, error) {
 	details := ContactDetails{
-		Mail:        mail,
-		PhoneNumber: phoneNumber,
+		Mail:        &mail,
+		PhoneNumber: &phoneNumber,
 	}
-	isMailValid := emailAddressRegex.MatchString(*mail)
-	isPhoneValid := phoneRegex.MatchString(*phoneNumber)
+	isMailValid := emailAddressRegex.MatchString(mail)
+	isPhoneValid := phoneRegex.MatchString(phoneNumber)
+
+	if mail == "" {
+		details.Mail = nil
+	}
+
+	if phoneNumber == "" {
+		details.PhoneNumber = nil
+	}
 
 	if !isMailValid && !isPhoneValid {
 		return ContactDetails{}, InvalidDataErr
