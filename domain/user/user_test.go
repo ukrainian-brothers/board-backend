@@ -23,7 +23,7 @@ func TestUserCreation(t *testing.T) {
 
 	testCases := []testData{
 		{
-			testName:       "Correct data",
+			testName:       "correct data",
 			firstName:      "Adam",
 			surname:        "Małysz",
 			login:          "adam@wp.pl",
@@ -35,7 +35,7 @@ func TestUserCreation(t *testing.T) {
 			expectedErr:    nil,
 		},
 		{
-			testName:    "Correct data",
+			testName:    "missing contact data",
 			firstName:   "Adam",
 			surname:     "Małysz",
 			login:       "a@wp.pl",
@@ -43,7 +43,7 @@ func TestUserCreation(t *testing.T) {
 			expectedErr: MissingContactDataErr,
 		},
 		{
-			testName:    "Correct data",
+			testName:    "missing personal data",
 			firstName:   "",
 			surname:     "Małysz",
 			login:       "a@wp.pl",
