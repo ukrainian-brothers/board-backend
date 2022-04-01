@@ -27,7 +27,7 @@ func getMockedRepo() internal_user.RepositoryMock {
 	return internal_user.RepositoryMock{}
 }
 
-func getPostgresRepo() (user.UserRepository, *gorp.DbMap) {
+func getPostgresRepo() (user.Repository, *gorp.DbMap) {
 	cfg, err := common.NewConfigFromFile("../config/configuration.test.local.json")
 	if err != nil {
 		log.WithError(err).Fatal("failed initializing config")
@@ -41,7 +41,7 @@ func getPostgresRepo() (user.UserRepository, *gorp.DbMap) {
 	return internal_user.NewPostgresUserRepository(db), db
 }
 
-func createUserAPI(userRepo user.UserRepository) (*httptest.Server, http.Client) {
+func createUserAPI(userRepo user.Repository) (*httptest.Server, http.Client) {
 	logger := log.NewEntry(log.New())
 
 	app := application.Application{
@@ -49,7 +49,8 @@ func createUserAPI(userRepo user.UserRepository) (*httptest.Server, http.Client)
 			AddUser: board.NewAddUser(userRepo),
 		},
 		Queries: application.Queries{
-			UserExists: board.NewUserExists(userRepo),
+			UserExists:         board.NewUserExists(userRepo),
+			VerifyUserPassword: board.NewVerifyUserPassword(userRepo),
 		},
 	}
 
@@ -65,7 +66,7 @@ func createUserAPI(userRepo user.UserRepository) (*httptest.Server, http.Client)
 	}
 }
 
-func doRequest(t *testing.T, client http.Client, method string, url string, payload interface{}, response interface{}) *http.Response{
+func doRequest(t *testing.T, client http.Client, method string, url string, payload interface{}, response interface{}) *http.Response {
 	by, err := json.Marshal(payload)
 	assert.NoError(t, err)
 
