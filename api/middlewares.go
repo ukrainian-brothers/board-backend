@@ -35,7 +35,7 @@ func (p MiddlewareProvider) AuthMiddleware(next http.HandlerFunc, logger *log.En
 			next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), "user_login", session.Values["user_login"].(string))))
 			return
 		}
-
+		
 		next.ServeHTTP(w, r)
 	}
 }

@@ -91,7 +91,6 @@ func (u UserAPI) Register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	WriteJSON(w, 201, map[string]string{"status": "ok"})
-	return
 }
 
 type loginPayload struct {
@@ -139,7 +138,7 @@ func (u UserAPI) Login(w http.ResponseWriter, r *http.Request) {
 		WriteError(w, http.StatusForbidden, "wrong credentials")
 		return
 	}
-	
+
 	session, err := u.sessionStore.Get(r, u.cfg.Session.SessionKey)
 	if err != nil {
 		log.WithError(err).Error("Login failed getting session")
