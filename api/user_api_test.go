@@ -32,10 +32,8 @@ func TestRegistrationE2E(t *testing.T) {
 		{
 			name:    "no payload",
 			payload: &registerPayload{},
-			pre:     func(t *testing.T, payload *registerPayload) {},
-			cleanUp: func(t *testing.T, payload *registerPayload) {},
 			expected: expected{
-				status: 422,
+				status: http.StatusUnprocessableEntity,
 				errorStruct: errorStruct{
 					Error:   "Unprocessable Entity",
 					Details: "missing contact details",
@@ -50,10 +48,8 @@ func TestRegistrationE2E(t *testing.T) {
 				Mail:     "mrosiak@wp.pl",
 				Phone:    "+48 111 222 333",
 			},
-			pre:     func(t *testing.T, payload *registerPayload) {},
-			cleanUp: func(t *testing.T, payload *registerPayload) {},
 			expected: expected{
-				status: 422,
+				status: http.StatusUnprocessableEntity,
 				errorStruct: errorStruct{
 					Error: "Unprocessable Entity",
 				},
@@ -69,13 +65,12 @@ func TestRegistrationE2E(t *testing.T) {
 				Mail:      "mrosiak@wp.pl",
 				Phone:     "+48 111 222 333",
 			},
-			pre: func(t *testing.T, payload *registerPayload) {},
 			cleanUp: func(t *testing.T, payload *registerPayload) {
 				_, err := db.Exec("DELETE FROM users WHERE login=$1", payload.Login)
 				assert.NoError(t, err)
 			},
 			expected: expected{
-				status: 201,
+				status: http.StatusCreated,
 			},
 		},
 		{
@@ -106,7 +101,7 @@ func TestRegistrationE2E(t *testing.T) {
 				assert.NoError(t, err)
 			},
 			expected: expected{
-				status: 422,
+				status: http.StatusUnprocessableEntity,
 				errorStruct: errorStruct{
 					Error:   "Unprocessable Entity",
 					Details: "user already exists",
@@ -117,7 +112,9 @@ func TestRegistrationE2E(t *testing.T) {
 
 	for _, tC := range testCases {
 		t.Run(tC.name, func(t *testing.T) {
-			tC.pre(t, tC.payload)
+			if tC.pre != nil {
+				tC.pre(t, tC.payload)
+			}
 
 			responseStruct := errorStruct{}
 			resp := doRequest(t, client, "POST", fmt.Sprintf("%s/api/user/register", server.URL), tC.payload, &responseStruct, nil)
@@ -125,7 +122,9 @@ func TestRegistrationE2E(t *testing.T) {
 			assert.Equal(t, tC.expected.errorStruct.Error, responseStruct.Error)
 			assert.Equal(t, tC.expected.errorStruct.Details, responseStruct.Details)
 
-			tC.cleanUp(t, tC.payload)
+			if tC.cleanUp != nil {
+				tC.cleanUp(t, tC.payload)
+			}
 		})
 	}
 }
@@ -298,8 +297,6 @@ func TestLoginE2E(t *testing.T) {
 				Login:    "the_test_user",
 				Password: "password",
 			},
-			pre:     func(t *testing.T, payload loginPayload) {},
-			cleanUp: func(t *testing.T, payload loginPayload) {},
 			expected: expected{
 				sessionExists: false,
 				status:        http.StatusUnprocessableEntity,
@@ -313,7 +310,9 @@ func TestLoginE2E(t *testing.T) {
 
 	for _, tC := range testCases {
 		t.Run(tC.name, func(t *testing.T) {
-			tC.pre(t, tC.payload)
+			if tC.pre != nil {
+				tC.pre(t, tC.payload)
+			}
 
 			responseStruct := errorStruct{}
 			resp := doRequest(t, client, "POST", fmt.Sprintf("%s/api/user/login", server.URL), tC.payload, &responseStruct, []*http.Cookie{})
@@ -327,11 +326,12 @@ func TestLoginE2E(t *testing.T) {
 
 				session, err := sessionStore.Get(resp.Request, getTestConfig(t).Session.SessionKey)
 				assert.NoError(t, err)
-
 				assert.Equal(t, tC.payload.Login, session.Values["user_login"])
 			}
 
-			tC.cleanUp(t, tC.payload)
+			if tC.cleanUp != nil {
+				tC.cleanUp(t, tC.payload)
+			}
 		})
 	}
 }

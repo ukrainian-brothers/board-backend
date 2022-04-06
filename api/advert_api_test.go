@@ -36,7 +36,6 @@ func TestAddAdvertE2E(t *testing.T) {
 				},
 			},
 			loggedIn: false,
-			cleanUp:  func(t *testing.T, userID uuid.UUID) {},
 		},
 		{
 			name: "invalid payload",
@@ -48,7 +47,6 @@ func TestAddAdvertE2E(t *testing.T) {
 				},
 			},
 			loggedIn: true,
-			cleanUp:  func(t *testing.T, userID uuid.UUID) {},
 		},
 		{
 			name: "invalid title",
@@ -65,7 +63,6 @@ func TestAddAdvertE2E(t *testing.T) {
 				},
 			},
 			loggedIn: true,
-			cleanUp:  func(t *testing.T, userID uuid.UUID) {},
 		},
 		{
 			name:     "success",
@@ -95,7 +92,10 @@ func TestAddAdvertE2E(t *testing.T) {
 				testUser := createTestUser(t, "test_login1213930", userRepo)
 				cookies = createTestSession(t, testUser, sessionStore)
 				defer removeTestUser(t, testUser.ID, userRepo)
-				defer tC.cleanUp(t, testUser.ID)
+				if tC.cleanUp != nil {
+					defer tC.cleanUp(t, testUser.ID)
+				}
+
 			}
 
 			errResponse := errorStruct{}
