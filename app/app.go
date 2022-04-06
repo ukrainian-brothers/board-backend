@@ -9,6 +9,7 @@ type Commands struct {
 
 type Queries struct {
 	GetAdvert          board.GetAdvert
+	GetUserByLogin     board.GetUserByLogin
 	UserExists         board.UserExists
 	VerifyUserPassword board.VerifyUserPassword
 }

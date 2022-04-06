@@ -109,11 +109,17 @@ func (repo PostgresUserRepository) Add(ctx context.Context, user *user.User) err
 func (repo PostgresUserRepository) Exists(ctx context.Context, login string) (bool, error) {
 	sqlExecutor := repo.db.WithContext(ctx)
 	exists, err := sqlExecutor.SelectStr(`select exists(select 1 from users where login=$1)`, login)
-	return exists=="true", err
+	if err != nil {
+		return false, fmt.Errorf("checking if user exists failed %w", err)
+	}
+	return exists == "true", nil
 }
 
 func (repo PostgresUserRepository) Delete(ctx context.Context, id uuid.UUID) error {
-	panic("implement me")
+	sqlExecutor := repo.db.WithContext(ctx)
+	_, err := sqlExecutor.Exec(`DELETE FROM users WHERE id=$1`, id)
+	if err != nil {
+		return fmt.Errorf("deleting user failed %w", err)
+	}
+	return nil
 }
-
-

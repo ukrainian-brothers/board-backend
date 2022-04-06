@@ -24,14 +24,6 @@ func NewContactDetails(mail, phoneNumber string) (ContactDetails, error) {
 	isMailValid := emailAddressRegex.MatchString(mail)
 	isPhoneValid := phoneRegex.MatchString(phoneNumber)
 
-	if mail == "" {
-		details.Mail = nil
-	}
-
-	if phoneNumber == "" {
-		details.PhoneNumber = nil
-	}
-
 	if !isMailValid && !isPhoneValid {
 		return ContactDetails{}, InvalidDataErr
 	}

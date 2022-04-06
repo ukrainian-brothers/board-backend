@@ -1,42 +1,46 @@
 package api
 
 import (
+	"context"
+	"github.com/gorilla/sessions"
 	log "github.com/sirupsen/logrus"
+	application "github.com/ukrainian-brothers/board-backend/app"
+	"github.com/ukrainian-brothers/board-backend/internal/common"
 	"net/http"
 	"runtime/debug"
 	"time"
 )
 
-// responseWriter is a minimal wrapper for http.ResponseWriter that allows the
-// written HTTP status code to be captured for logging.
-type responseWriter struct {
-	http.ResponseWriter
-	status      int
-	wroteHeader bool
+type MiddlewareProvider struct {
+	sessionStore *sessions.CookieStore
+	app          *application.Application
+	cfg          *common.Config
 }
 
-func wrapResponseWriter(w http.ResponseWriter) *responseWriter {
-	return &responseWriter{ResponseWriter: w}
+func NewMiddlewareProvider(sessionStore *sessions.CookieStore, app *application.Application, cfg *common.Config) *MiddlewareProvider {
+	return &MiddlewareProvider{sessionStore: sessionStore, app: app, cfg: cfg}
 }
 
-func (rw *responseWriter) Status() int {
-	return rw.status
-}
+func (p MiddlewareProvider) AuthMiddleware(next http.HandlerFunc, logger *log.Entry) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		session, err := p.sessionStore.Get(r, p.cfg.Session.SessionKey)
+		if err != nil {
+			logger.WithError(err).Error("failed getting session from store")
+			next.ServeHTTP(w, r)
+			return
+		}
 
-func (rw *responseWriter) WriteHeader(code int) {
-	if rw.wroteHeader {
-		return
+		if session.Values["user_login"] != nil {
+			// Read session login and put it into ctx - so later on it can be used to verify if user has access to an entity
+			next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), "user_login", session.Values["user_login"].(string))))
+			return
+		}
+
+		next.ServeHTTP(w, r)
 	}
-
-	rw.status = code
-	rw.ResponseWriter.WriteHeader(code)
-	rw.wroteHeader = true
-
-	return
 }
 
-// LoggingMiddleware logs the incoming HTTP request & its duration.
-func LoggingMiddleware(logger *log.Entry) func(http.Handler) http.Handler {
+func (p MiddlewareProvider) LoggingMiddleware(logger *log.Entry) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		fn := func(w http.ResponseWriter, r *http.Request) {
 			defer func() {
@@ -64,7 +68,7 @@ func LoggingMiddleware(logger *log.Entry) func(http.Handler) http.Handler {
 	}
 }
 
-func BodyLimitMiddleware(next http.Handler) http.Handler {
+func (p MiddlewareProvider) BodyLimitMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "POST" || r.Method == "PUT" {
 			r.Body = http.MaxBytesReader(w, r.Body, 1048576)
