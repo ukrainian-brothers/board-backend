@@ -139,7 +139,7 @@ func (u UserAPI) Login(w http.ResponseWriter, r *http.Request) {
 		WriteError(w, http.StatusForbidden, "wrong credentials")
 		return
 	}
-
+	
 	session, err := u.sessionStore.Get(r, u.cfg.Session.SessionKey)
 	if err != nil {
 		log.WithError(err).Error("Login failed getting session")
@@ -149,5 +149,8 @@ func (u UserAPI) Login(w http.ResponseWriter, r *http.Request) {
 
 	session.Values["user_login"] = payload.Login
 	err = session.Save(r, w)
+	if err != nil {
+		log.WithError(err).Error("failed saving session")
+	}
 	WriteJSON(w, 200, map[string]string{"status": "ok"})
 }

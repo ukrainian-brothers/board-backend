@@ -139,6 +139,7 @@ func createTestSession(t *testing.T, usr *user.User, store sessions.Store) []*ht
 	session.Values["user_login"] = usr.Login
 	w := httptest.NewRecorder()
 	err = session.Save(r, w)
+	assert.NoError(t, err)
 
 	return w.Result().Cookies()
 }

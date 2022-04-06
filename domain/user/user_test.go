@@ -23,16 +23,16 @@ func TestUserCreation(t *testing.T) {
 
 	testCases := []testData{
 		{
-			testName:       "correct data",
-			firstName:      "Adam",
-			surname:        "Małysz",
-			login:          "adam@wp.pl",
-			password:       "abc",
+			testName:  "correct data",
+			firstName: "Adam",
+			surname:   "Małysz",
+			login:     "adam@wp.pl",
+			password:  "abc",
 			contactDetails: domain.ContactDetails{
 				Mail:        newStringPtr("mail"),
 				PhoneNumber: newStringPtr("phone"),
 			},
-			expectedErr:    nil,
+			expectedErr: nil,
 		},
 		{
 			testName:    "missing contact data",
