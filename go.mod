@@ -1,6 +1,6 @@
 module github.com/ukrainian-brothers/board-backend
 
-go 1.18
+go 1.17
 
 replace github.com/go-gorp/gorp => github.com/Rekseto/gorp v2.2.1-0.20220113204932-b6366a8addcd+incompatible
 
