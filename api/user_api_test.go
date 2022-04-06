@@ -258,7 +258,7 @@ func TestLoginE2E(t *testing.T) {
 			},
 			expected: expected{
 				sessionExists: true,
-				status:        200,
+				status:        http.StatusOK,
 			},
 		},
 		{
@@ -285,7 +285,7 @@ func TestLoginE2E(t *testing.T) {
 			},
 			expected: expected{
 				sessionExists: false,
-				status:        403,
+				status:        http.StatusForbidden,
 				errorStruct: errorStruct{
 					Error:   "Forbidden",
 					Details: "wrong credentials",
@@ -302,7 +302,7 @@ func TestLoginE2E(t *testing.T) {
 			cleanUp: func(t *testing.T, payload loginPayload) {},
 			expected: expected{
 				sessionExists: false,
-				status:        422,
+				status:        http.StatusUnprocessableEntity,
 				errorStruct: errorStruct{
 					Error:   "Unprocessable Entity",
 					Details: "user does not exists",
@@ -363,7 +363,7 @@ func TestLogin(t *testing.T) {
 				userRepo.On("Exists", mock.Anything, mock.Anything).Return(false, errors.New("x"))
 			},
 			expected: expected{
-				status: 500,
+				status: http.StatusInternalServerError,
 				errorStruct: errorStruct{
 					Error: "Internal Server Error",
 				},
@@ -380,7 +380,7 @@ func TestLogin(t *testing.T) {
 				userRepo.On("GetByLogin", mock.Anything, mock.Anything).Return(&user.User{}, errors.New("x"))
 			},
 			expected: expected{
-				status: 500,
+				status: http.StatusInternalServerError,
 				errorStruct: errorStruct{
 					Error: "Internal Server Error",
 				},

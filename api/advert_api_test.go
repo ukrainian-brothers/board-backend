@@ -29,7 +29,7 @@ func TestAddAdvertE2E(t *testing.T) {
 		{
 			name: "not authorised",
 			expected: expected{
-				status: 403,
+				status: http.StatusForbidden,
 				errorStruct: errorStruct{
 					Error:   "Forbidden",
 					Details: "not authorized",
@@ -41,7 +41,7 @@ func TestAddAdvertE2E(t *testing.T) {
 		{
 			name: "invalid payload",
 			expected: expected{
-				status: 422,
+				status: http.StatusUnprocessableEntity,
 				errorStruct: errorStruct{
 					Error:   "Unprocessable Entity",
 					Details: "invalid payload",
@@ -53,16 +53,13 @@ func TestAddAdvertE2E(t *testing.T) {
 		{
 			name: "invalid title",
 			expected: expected{
-				status: 422,
+				status: http.StatusUnprocessableEntity,
 				errorStruct: errorStruct{
 					Error:   "Unprocessable Entity",
 					Details: "invalid advert details",
 				},
 			},
 			payload: newAdvertPayload{
-				Title:       "",
-				Description: "",
-				Type:        "",
 				ContactDetails: contactPayload{
 					Mail: "mmmmmm@wp.pl",
 				},
@@ -82,7 +79,7 @@ func TestAddAdvertE2E(t *testing.T) {
 				},
 			},
 			expected: expected{
-				status: 201,
+				status: http.StatusCreated,
 			},
 			cleanUp: func(t *testing.T, userID uuid.UUID) {
 				_, err := db.Exec("DELETE FROM adverts WHERE user_id=$1", userID.String())
