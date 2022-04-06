@@ -9,7 +9,7 @@ func newStringPtr(s string) *string {
 	return &s
 }
 
-var examplePassword = "MuDz9QX2cU6e67⌘bdbd\\\\xb2=\\\\B2jKGiJJrix.TjLG.GVupBizaBmV*wre_mkGCgN7rqRg!njsDqcvJsF9UsNW8bKPvpmvc7VCMz3Aofbo2yp*"
+var examplePassword = "MuDz9QX2cU6e67⌘bdbd\\\\xb2=\\\\B2jKGiJJrix.TjLG.GVuxBizaBmV*wre_mkGCgN7rqRg!njsDqcvJsF9UsNW8bKPvpmvc7VCMz3Aofbo2yp*"
 
 func benchmarkHashing(hashingParams HashingParams, b *testing.B) {
 	for n := 0; n < b.N; n++ {
