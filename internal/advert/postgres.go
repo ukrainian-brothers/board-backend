@@ -62,8 +62,8 @@ func (repo PostgresAdvertRepository) Get(ctx context.Context, id uuid.UUID) (adv
 	}
 
 	usr, err := user.NewUser(adv.FirstName, adv.Surname, adv.Login, *adv.Password, domain.ContactDetails{
-		Mail:        newStringPtr("mail"),
-		PhoneNumber: newStringPtr("phone"),
+		Mail:        adv.Mail,
+		PhoneNumber: adv.PhoneNumber,
 	})
 	if err != nil {
 		return advert.Advert{}, fmt.Errorf("getting advert failed while performing NewUser() %w", err)
