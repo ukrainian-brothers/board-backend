@@ -5,13 +5,11 @@ import (
 	"testing"
 )
 
-func newStringPtr(s string) *string {
-	return &s
-}
+var examplePassword = "MuDz9QX2cU6e67⌘bdbd\\\\xb2=\\\\B2jKGiJJrix.TjLG.GVuxBizaBmV*wre_mkGCgN7rqRg!njsDqcvJsF9UsNW8bKPvpmvc7VCMz3Aofbo2yp*"
 
 func benchmarkHashing(hashingParams HashingParams, b *testing.B) {
 	for n := 0; n < b.N; n++ {
-		_, _ = HashPassword("MuDz9QX2cU6e67⌘bdbd\\\\xb2=\\\\B2jKGiJJrix.TjLG.GVupBizaBmV*wre_mkGCgN7rqRg!njsDqcvJsF9UsNW8bKPvpmvc7VCMz3Aofbo2yp*", hashingParams)
+		_, _ = HashPassword(examplePassword, hashingParams)
 	}
 }
 
@@ -37,8 +35,8 @@ func TestHashPassword(t *testing.T) {
 	testCases := []testCase{
 		{
 			name:                 "success",
-			password:             "MuDz9QX2cU6e67⌘bdbd\\\\xb2=\\\\B2jKGiJJrix.TjLG.GVupBizaBmV*wre_mkGCgN7rqRg!njsDqcvJsF9UsNW8bKPvpmvc7VCMz3Aofbo2yp*",
-			verificationPassword: "MuDz9QX2cU6e67⌘bdbd\\\\xb2=\\\\B2jKGiJJrix.TjLG.GVupBizaBmV*wre_mkGCgN7rqRg!njsDqcvJsF9UsNW8bKPvpmvc7VCMz3Aofbo2yp*",
+			password:             examplePassword,
+			verificationPassword: examplePassword,
 			hashingParams:        GetHashingParams(),
 			expected: expected{
 				valid: true,

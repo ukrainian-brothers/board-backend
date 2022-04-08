@@ -15,8 +15,14 @@ type PostgresConfig struct {
 	DBName   string `json:"db_name"`
 }
 
+type SessionConfig struct {
+	Secret     string `json:"secret"`
+	SessionKey string `json:"session_key"`
+}
+
 type Config struct {
 	Postgres PostgresConfig `json:"postgres_config"`
+	Session  SessionConfig  `json:"session_config"`
 }
 
 func NewConfigFromFile(fileName string) (*Config, error) {

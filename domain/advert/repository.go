@@ -8,7 +8,7 @@ import (
 
 var (
 	AdvertAlreadyExists = errors.New("advert already exists in repository")
-	AdvertNotFound = errors.New("advert not found in repository")
+	AdvertNotFound      = errors.New("advert not found in repository")
 )
 
 type Repository interface {

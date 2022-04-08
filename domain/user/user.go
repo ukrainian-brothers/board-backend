@@ -22,6 +22,8 @@ var (
 )
 
 func NewUser(firstName string, sureName string, login string, password string, contactDetails domain.ContactDetails) (*User, error) {
+	// TODO: regex for login, password and write tests
+
 	if firstName == "" || sureName == "" {
 		return nil, MissingPersonalDataErr
 	}
@@ -31,9 +33,9 @@ func NewUser(firstName string, sureName string, login string, password string, c
 	}
 
 	usr := &User{
-		ID: uuid.New(),
-		Login: login,
-		Password:   &password,
+		ID:       uuid.New(),
+		Login:    login,
+		Password: &password,
 		Person: domain.Person{
 			FirstName: firstName,
 			Surname:   sureName,

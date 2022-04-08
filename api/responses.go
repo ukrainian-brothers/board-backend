@@ -7,7 +7,7 @@ import (
 )
 
 type errorStruct struct {
-	Error string `json:"error,omitempty"`
+	Error   string `json:"error,omitempty"`
 	Details string `json:"errorDetails,omitempty"`
 }
 

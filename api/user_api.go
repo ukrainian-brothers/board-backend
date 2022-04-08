@@ -3,28 +3,32 @@ package api
 import (
 	"encoding/json"
 	"github.com/gorilla/mux"
+	"github.com/gorilla/sessions"
 	logrus "github.com/sirupsen/logrus"
 	application "github.com/ukrainian-brothers/board-backend/app"
 	"github.com/ukrainian-brothers/board-backend/domain"
 	"github.com/ukrainian-brothers/board-backend/domain/user"
+	"github.com/ukrainian-brothers/board-backend/internal/common"
 	"net/http"
 )
 
 type UserAPI struct {
-	log *logrus.Entry
-	r   *mux.Router
-	app application.Application
+	log          *logrus.Entry
+	router       *mux.Router
+	app          application.Application
+	sessionStore *sessions.CookieStore
+	cfg          *common.Config
 }
 
-func NewUserAPI(r *mux.Router, log *logrus.Entry, app application.Application) *UserAPI {
-	usrApi := UserAPI{r: r, app: app, log: log}
+func NewUserAPI(r *mux.Router, log *logrus.Entry, app application.Application, middleware *MiddlewareProvider, sessionStore *sessions.CookieStore, cfg *common.Config) *UserAPI {
+	usrApi := UserAPI{router: r, app: app, log: log, sessionStore: sessionStore, cfg: cfg}
 	r.HandleFunc("/api/user/register", usrApi.Register).Methods("POST")
-	r.HandleFunc("/api/user/login", usrApi.login).Methods("POST")
+	r.HandleFunc("/api/user/login", usrApi.Login).Methods("POST")
 	return &usrApi
 }
 
 type registerPayload struct {
-	Login     string `json:"login"`
+	Login     string `json:"Login"`
 	Password  string `json:"password"`
 	Firstname string `json:"firstname"`
 	Surname   string `json:"surname"`
@@ -42,7 +46,7 @@ func (u UserAPI) Register(w http.ResponseWriter, r *http.Request) {
 	payload := registerPayload{}
 	err := dec.Decode(&payload)
 	if err != nil {
-		log.WithError(err).Error("failed decoding payload")
+		log.WithError(err).Error("failed decoding register payload")
 		WriteError(w, http.StatusUnprocessableEntity, "invalid payload")
 		return
 	}
@@ -55,7 +59,7 @@ func (u UserAPI) Register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	log = log.WithFields(logrus.Fields{
-		"login": payload.Login,
+		"Login": payload.Login,
 		"mail":  payload.Mail,
 	})
 
@@ -87,6 +91,65 @@ func (u UserAPI) Register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	WriteJSON(w, 201, map[string]string{"status": "ok"})
-	return
 }
-func (u UserAPI) login(w http.ResponseWriter, r *http.Request) {}
+
+type loginPayload struct {
+	Login    string
+	Password string
+}
+
+func (u UserAPI) Login(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	log := u.log
+
+	dec := json.NewDecoder(r.Body)
+	dec.DisallowUnknownFields()
+
+	payload := loginPayload{}
+	err := dec.Decode(&payload)
+	if err != nil {
+		log.WithError(err).Error("failed decoding login payload")
+		WriteError(w, http.StatusUnprocessableEntity, "invalid payload")
+		return
+	}
+
+	exists, err := u.app.Queries.UserExists.Execute(ctx, payload.Login)
+	if err != nil {
+		log.WithError(err).Error("failed verifying user existence while logging in")
+		WriteError(w, http.StatusInternalServerError, "")
+		return
+	}
+
+	if !exists {
+		log.Info("failed login, user does not exists")
+		WriteError(w, http.StatusUnprocessableEntity, "user does not exists")
+		return
+	}
+
+	valid, err := u.app.Queries.VerifyUserPassword.Execute(ctx, payload.Login, payload.Password)
+	if err != nil {
+		log.WithError(err).Error("failed verifying user password")
+		WriteError(w, http.StatusInternalServerError, "")
+		return
+	}
+
+	if !valid {
+		log.Info("wrong credentials")
+		WriteError(w, http.StatusForbidden, "wrong credentials")
+		return
+	}
+
+	session, err := u.sessionStore.Get(r, u.cfg.Session.SessionKey)
+	if err != nil {
+		log.WithError(err).Error("Login failed getting session")
+		WriteError(w, http.StatusInternalServerError, "")
+		return
+	}
+
+	session.Values["user_login"] = payload.Login
+	err = session.Save(r, w)
+	if err != nil {
+		log.WithError(err).Error("failed saving session")
+	}
+	WriteJSON(w, 200, map[string]string{"status": "ok"})
+}

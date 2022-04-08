@@ -18,8 +18,8 @@ const (
 )
 
 var (
-	ContactEmptyErr = errors.New("contact is empty")
-	NoUserProvidedErr = errors.New("no user provided")
+	ContactEmptyErr     = errors.New("contact is empty")
+	NoUserProvidedErr   = errors.New("no user provided")
 	MissingBasicInfoErr = errors.New("advert is missing basic info")
 )
 
