@@ -31,8 +31,9 @@ func main() {
 		Commands: application.Commands{
 			AddUser: board.NewAddUser(userRepo),
 		},
-		Queries:  application.Queries{
-			UserExists: board.NewUserExists(userRepo),
+		Queries: application.Queries{
+			UserExists:         board.NewUserExists(userRepo),
+			VerifyUserPassword: board.NewVerifyUserPassword(userRepo),
 		},
 	}
 
@@ -42,8 +43,8 @@ func main() {
 	api.NewUserAPI(router, logger, app)
 
 	srv := &http.Server{
-		Handler: router,
-		Addr:    "127.0.0.1:8000",
+		Handler:      router,
+		Addr:         "127.0.0.1:8000",
 		WriteTimeout: 15 * time.Second,
 		ReadTimeout:  15 * time.Second,
 	}

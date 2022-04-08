@@ -79,7 +79,7 @@ func (u UserAPI) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = u.app.Commands.AddUser.Execute(ctx, usr)
+	err = u.app.Commands.AddUser.Execute(ctx, *usr)
 	if err != nil {
 		log.WithError(err).Error("failed to execute AddUser command")
 		WriteError(w, http.StatusInternalServerError, "")

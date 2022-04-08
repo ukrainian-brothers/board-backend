@@ -6,10 +6,10 @@ import (
 )
 
 type UserExists struct {
-	repo user.UserRepository
+	repo user.Repository
 }
 
-func NewUserExists(repo user.UserRepository) UserExists {
+func NewUserExists(repo user.Repository) UserExists {
 	return UserExists{repo: repo}
 }
 
