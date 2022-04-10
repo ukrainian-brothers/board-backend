@@ -82,7 +82,8 @@ func (repo PostgresAdvertRepository) Get(ctx context.Context, id uuid.UUID) (adv
 		return advert.Advert{}, fmt.Errorf("failed getting advert translations: %w", err)
 	}
 
-	var multilingualTitle, multilingualDescription MultilingualString
+	multilingualTitle := make(MultilingualString)
+	multilingualDescription := make(MultilingualString)
 	for _, val := range advertDetailsList {
 		advertDetails := val.(advertDetailsDB)
 		multilingualTitle[advertDetails.Language] = advertDetails.Title
