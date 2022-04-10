@@ -8,6 +8,7 @@ import (
 	"github.com/ukrainian-brothers/board-backend/domain"
 	"github.com/ukrainian-brothers/board-backend/domain/advert"
 	"github.com/ukrainian-brothers/board-backend/domain/user"
+	. "github.com/ukrainian-brothers/board-backend/pkg/translation"
 	"time"
 )
 
@@ -17,6 +18,7 @@ type PostgresAdvertRepository struct {
 
 func NewPostgresAdvertRepository(db *gorp.DbMap) *PostgresAdvertRepository {
 	db.AddTableWithName(advertDB{}, "adverts").SetKeys(false, "id")
+	db.AddTableWithName(advertDetailsDB{}, "adverts_details").SetKeys(false, "id")
 
 	return &PostgresAdvertRepository{
 		db: db,
@@ -30,8 +32,6 @@ func newStringPtr(s string) *string {
 type advertDB struct {
 	ID             uuid.UUID             `db:"id"`
 	UserID         uuid.UUID             `db:"user_id"`
-	Title          string                `db:"title"`
-	Description    string                `db:"description"`
 	Type           domain.AdvertType     `db:"type"`
 	Views          int                   `db:"views"`
 	ContactDetails domain.ContactDetails `db:"contact_details,json"`
@@ -40,8 +40,16 @@ type advertDB struct {
 	DestroyedAt    *time.Time            `db:"destroyed_at"`
 }
 
+type advertDetailsDB struct {
+	ID          uuid.UUID   `db:"id"`
+	AdvertID    uuid.UUID   `db:"advert_id"`
+	Language    LanguageTag `db:"language"` // ISO 639-1
+	Title       string      `db:"title"`
+	Description string      `db:"description"`
+}
+
 func (repo PostgresAdvertRepository) Get(ctx context.Context, id uuid.UUID) (advert.Advert, error) {
-	repo.db.WithContext(ctx)
+	sqlExec := repo.db.WithContext(ctx)
 
 	type advertAndUser struct {
 		advertDB
@@ -56,7 +64,7 @@ func (repo PostgresAdvertRepository) Get(ctx context.Context, id uuid.UUID) (adv
 
 	adv := advertAndUser{}
 
-	err := repo.db.SelectOne(&adv, "SELECT * FROM adverts JOIN users ON (adverts.user_id = users.id) WHERE adverts.id=$1;", id.String())
+	err := sqlExec.SelectOne(&adv, "SELECT * FROM adverts JOIN users ON (adverts.user_id = users.id) WHERE adverts.id=$1;", id.String())
 	if err != nil {
 		return advert.Advert{}, fmt.Errorf("getting advert failed while selecting from db %w", err)
 	}
@@ -69,11 +77,27 @@ func (repo PostgresAdvertRepository) Get(ctx context.Context, id uuid.UUID) (adv
 		return advert.Advert{}, fmt.Errorf("getting advert failed while performing NewUser() %w", err)
 	}
 
+	advertDetailsList, err := sqlExec.Select(advertDetailsDB{}, "SELECT * FROM adverts_details WHERE advert_id=$1", adv.ID)
+	if err != nil {
+		return advert.Advert{}, fmt.Errorf("failed getting advert translations: %w", err)
+	}
+
+	multilingualTitle := make(MultilingualString)
+	multilingualDescription := make(MultilingualString)
+	for _, val := range advertDetailsList {
+		advertDetails := val.(advertDetailsDB)
+		multilingualTitle[advertDetails.Language] = advertDetails.Title
+		multilingualDescription[advertDetails.Language] = advertDetails.Description
+	}
+
+	multilingualTitle.RemoveUnsupported()
+	multilingualDescription.RemoveUnsupported()
+
 	return advert.Advert{
 		ID: adv.ID,
 		Details: domain.AdvertDetails{
-			Title:          adv.Title,
-			Description:    adv.Description,
+			Title:          multilingualTitle,
+			Description:    multilingualDescription,
 			Type:           adv.Type,
 			Views:          adv.Views,
 			ContactDetails: adv.ContactDetails,
@@ -86,23 +110,47 @@ func (repo PostgresAdvertRepository) Get(ctx context.Context, id uuid.UUID) (adv
 }
 
 func (repo PostgresAdvertRepository) Add(ctx context.Context, advert *advert.Advert) error {
+	trans, err := repo.db.Begin()
+	if err != nil {
+		return fmt.Errorf("failed creating transaction for adding advert to repo: %w", err)
+	}
+	sqlExecutor := trans.WithContext(ctx)
+
 	advertDb := advertDB{
 		ID:             advert.ID,
 		UserID:         advert.User.ID,
-		Title:          advert.Details.Title,
-		Description:    advert.Details.Description,
 		Type:           advert.Details.Type,
 		ContactDetails: advert.Details.ContactDetails,
 		CreatedAt:      advert.CreatedAt,
 		DestroyedAt:    advert.DestroyedAt,
 		UpdatedAt:      advert.UpdatedAt,
 	}
-	repo.db.WithContext(ctx)
-	err := repo.db.Insert(&advertDb)
+
+	err = sqlExecutor.Insert(&advertDb)
 	if err != nil {
 		return fmt.Errorf("adding advert failed while performing sql %w", err)
 	}
-	return nil
+
+	for lang, title := range advert.Details.Title {
+		description, ok := advert.Details.Description[lang]
+		if !ok {
+			continue
+		}
+
+		advertDetailsDB := advertDetailsDB{
+			ID:          uuid.New(),
+			AdvertID:    advert.ID,
+			Language:    lang,
+			Title:       title,
+			Description: description,
+		}
+		err = sqlExecutor.Insert(&advertDetailsDB)
+		if err != nil {
+			return fmt.Errorf("failed inserting advertDetails: %w", err)
+		}
+	}
+
+	return trans.Commit()
 }
 
 func (repo PostgresAdvertRepository) Delete(ctx context.Context, id uuid.UUID) error {

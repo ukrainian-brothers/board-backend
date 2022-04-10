@@ -5,6 +5,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/ukrainian-brothers/board-backend/domain"
+	. "github.com/ukrainian-brothers/board-backend/pkg/translation"
 	"net/http"
 	"testing"
 )
@@ -68,8 +69,8 @@ func TestAddAdvertE2E(t *testing.T) {
 			name:     "success",
 			loggedIn: true,
 			payload: newAdvertPayload{
-				Title:       "title",
-				Description: "description",
+				Title:       MultilingualString{English: "x"},
+				Description: MultilingualString{English: "x"},
 				Type:        domain.AdvertTypeTransport,
 				ContactDetails: contactPayload{
 					Mail: "mmmmmm@wp.pl",
@@ -95,7 +96,6 @@ func TestAddAdvertE2E(t *testing.T) {
 				if tC.cleanUp != nil {
 					defer tC.cleanUp(t, testUser.ID)
 				}
-
 			}
 
 			errResponse := errorStruct{}

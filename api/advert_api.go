@@ -11,6 +11,7 @@ import (
 	"github.com/ukrainian-brothers/board-backend/domain"
 	"github.com/ukrainian-brothers/board-backend/domain/advert"
 	"github.com/ukrainian-brothers/board-backend/internal/common"
+	. "github.com/ukrainian-brothers/board-backend/pkg/translation"
 	"net/http"
 	"time"
 )
@@ -34,10 +35,15 @@ type contactPayload struct {
 	PhoneNumber string
 }
 type newAdvertPayload struct {
-	Title          string            `json:"title"`
-	Description    string            `json:"description"`
-	Type           domain.AdvertType `json:"type"`
-	ContactDetails contactPayload    `json:"contact_details"`
+	Title          MultilingualString `json:"title"`
+	Description    MultilingualString `json:"description"`
+	Type           domain.AdvertType  `json:"type"`
+	ContactDetails contactPayload     `json:"contact_details"`
+}
+
+func (p *newAdvertPayload) RemoveUnsupportedLanguages() {
+	p.Title.RemoveUnsupported()
+	p.Description.RemoveUnsupported()
 }
 
 func (a AdvertAPI) AddAdvert(w http.ResponseWriter, r *http.Request) {
@@ -52,7 +58,6 @@ func (a AdvertAPI) AddAdvert(w http.ResponseWriter, r *http.Request) {
 	}
 
 	log = log.WithField("user_login", userLogin.(string))
-
 	dec := json.NewDecoder(r.Body)
 	dec.DisallowUnknownFields()
 
@@ -63,6 +68,7 @@ func (a AdvertAPI) AddAdvert(w http.ResponseWriter, r *http.Request) {
 		WriteError(w, http.StatusUnprocessableEntity, "invalid payload")
 		return
 	}
+	payload.RemoveUnsupportedLanguages()
 
 	usr, err := a.app.Queries.GetUserByLogin.Execute(ctx, userLogin.(string))
 	if err != nil {
@@ -103,14 +109,14 @@ func (a AdvertAPI) AddAdvert(w http.ResponseWriter, r *http.Request) {
 }
 
 type advertResponse struct {
-	ID             string            `json:"id"`
-	Title          string            `json:"title"`
-	Description    string            `json:"description"`
-	Type           domain.AdvertType `json:"type"`
-	ContactDetails contactPayload    `json:"contact_details"`
-	CreatedAt      time.Time         `json:"created_at"`
-	UpdatedAt      *time.Time        `json:"updated_at,omitempty"`
-	DestroyedAt    *time.Time        `json:"destroyed_at,omitempty"`
+	ID             string             `json:"id"`
+	Title          MultilingualString `json:"title"`
+	Description    MultilingualString `json:"description"`
+	Type           domain.AdvertType  `json:"type"`
+	ContactDetails contactPayload     `json:"contact_details"`
+	CreatedAt      time.Time          `json:"created_at"`
+	UpdatedAt      *time.Time         `json:"updated_at,omitempty"`
+	DestroyedAt    *time.Time         `json:"destroyed_at,omitempty"`
 }
 
 func (a *advertResponse) LoadAdvert(adv *advert.Advert) {

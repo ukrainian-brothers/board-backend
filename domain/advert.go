@@ -1,17 +1,19 @@
 package domain
 
+import . "github.com/ukrainian-brothers/board-backend/pkg/translation"
+
 type AdvertType string
 
 const (
 	AdvertTypeTransport   AdvertType = "transport"
-	AdvertTypeLawyer                 = "lawyer"
-	AdvertTypePlaceToStay            = "place_to_stay"
-	AdvertTypeJob                    = "job"
+	AdvertTypeLawyer      AdvertType = "lawyer"
+	AdvertTypePlaceToStay AdvertType = "place_to_stay"
+	AdvertTypeJob         AdvertType = "job"
 )
 
 type AdvertDetails struct {
-	Title          string
-	Description    string
+	Title          MultilingualString
+	Description    MultilingualString
 	Type           AdvertType
 	Views          int
 	ContactDetails ContactDetails

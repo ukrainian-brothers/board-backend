@@ -6,6 +6,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/ukrainian-brothers/board-backend/domain"
 	"github.com/ukrainian-brothers/board-backend/domain/user"
+	. "github.com/ukrainian-brothers/board-backend/pkg/translation"
 	"time"
 )
 
@@ -13,14 +14,15 @@ type AdvertLogTrigger string
 
 const (
 	AdvertCreatedEvent AdvertLogTrigger = "created"
-	AdvertUpdatedEvent                  = "updated"
-	AdvertDeletedEvent                  = "deleted"
+	AdvertUpdatedEvent AdvertLogTrigger = "updated"
+	AdvertDeletedEvent AdvertLogTrigger = "deleted"
 )
 
 var (
 	ContactEmptyErr     = errors.New("contact is empty")
 	NoUserProvidedErr   = errors.New("no user provided")
 	MissingBasicInfoErr = errors.New("advert is missing basic info")
+	InvalidLanguages    = errors.New("not enough valid languages provided")
 )
 
 type AdvertLog struct {
@@ -50,7 +52,7 @@ func WithContactDetails(contactDetails domain.ContactDetails) AdvertOption {
 	}
 }
 
-func NewAdvert(user *user.User, title string, description string, advertType domain.AdvertType, opts ...AdvertOption) (*Advert, error) {
+func NewAdvert(user *user.User, title MultilingualString, description MultilingualString, advertType domain.AdvertType, opts ...AdvertOption) (*Advert, error) {
 	if user == nil {
 		return nil, NoUserProvidedErr
 	}
@@ -64,12 +66,27 @@ func NewAdvert(user *user.User, title string, description string, advertType dom
 		}
 	}
 
-	if title == "" || description == "" {
+	if title.Empty() || description.Empty() {
 		return nil, MissingBasicInfoErr
 	}
 	advert.User = user
+
+	title.RemoveUnsupported()
+	description.RemoveUnsupported()
 	advert.Details.Title = title
 	advert.Details.Description = description
+
+	validLanguages := 0
+	for lang := range title {
+		_, ok := description[lang]
+		if ok {
+			validLanguages = validLanguages + 1
+		}
+	}
+	if validLanguages == 0 {
+		return nil, InvalidLanguages
+	}
+
 	advert.Details.Type = advertType
 
 	if advert.Details.ContactDetails.IsEmpty() {

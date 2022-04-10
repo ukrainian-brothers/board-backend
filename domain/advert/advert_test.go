@@ -4,6 +4,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/ukrainian-brothers/board-backend/domain"
 	"github.com/ukrainian-brothers/board-backend/domain/user"
+	. "github.com/ukrainian-brothers/board-backend/pkg/translation"
 	"testing"
 )
 
@@ -19,8 +20,8 @@ func TestAdvertNew(t *testing.T) {
 	type testData struct {
 		testName     string
 		user         *user.User
-		title        string
-		description  string
+		title        MultilingualString
+		description  MultilingualString
 		advertType   domain.AdvertType
 		opts         []AdvertOption
 		expectations expectations
@@ -42,8 +43,8 @@ func TestAdvertNew(t *testing.T) {
 		{
 			testName:    "Correct data using user contact details",
 			user:        usr,
-			title:       "Relocation for refugees",
-			description: "desc",
+			title:       MultilingualString{"en": "x"},
+			description: MultilingualString{"en": "x"},
 			advertType:  domain.AdvertTypeTransport,
 			expectations: expectations{
 				err: nil,
@@ -56,8 +57,8 @@ func TestAdvertNew(t *testing.T) {
 		{
 			testName:    "Correct data with different contact details",
 			user:        usr,
-			title:       "Relocation for refugees",
-			description: "desc",
+			title:       MultilingualString{"en": "x"},
+			description: MultilingualString{"en": "x"},
 			advertType:  domain.AdvertTypeTransport,
 			opts: []AdvertOption{
 				WithContactDetails(
@@ -76,7 +77,7 @@ func TestAdvertNew(t *testing.T) {
 		{
 			testName:   "Correct data with different contact details",
 			user:       usr,
-			title:      "Relocation for refugees",
+			title:      MultilingualString{"en": "x"},
 			advertType: domain.AdvertTypeTransport,
 			opts:       []AdvertOption{WithContactDetails(domain.ContactDetails{})},
 			expectations: expectations{
@@ -107,7 +108,5 @@ func TestAdvertNew(t *testing.T) {
 				assert.Equal(t, tC.expectations.contactDetails, adv.Details.ContactDetails)
 			}
 		})
-
 	}
-
 }
