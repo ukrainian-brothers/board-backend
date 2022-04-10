@@ -27,6 +27,7 @@ type AdvertAPI struct {
 func NewAdvertAPI(r *mux.Router, log *logrus.Entry, app application.Application, middleware *MiddlewareProvider, sessionStore *sessions.CookieStore, cfg *common.Config) *AdvertAPI {
 	advertApi := AdvertAPI{router: r, app: app, log: log, sessionStore: sessionStore, cfg: cfg}
 	r.HandleFunc("/api/adverts", middleware.AuthMiddleware(advertApi.AddAdvert, log)).Methods("POST")
+	r.HandleFunc("/api/adverts", middleware.AuthMiddleware(advertApi.AdvertsList, log)).Methods("GET")
 	return &advertApi
 }
 
@@ -129,4 +130,8 @@ func (a *advertResponse) LoadAdvert(adv *advert.Advert) {
 	a.CreatedAt = adv.CreatedAt
 	a.UpdatedAt = adv.UpdatedAt
 	a.DestroyedAt = adv.DestroyedAt
+}
+
+func (a AdvertAPI) AdvertsList(w http.ResponseWriter, r *http.Request) {
+	WriteJSON(w, 501, map[string]string{"status": "not implemented yet"})
 }
