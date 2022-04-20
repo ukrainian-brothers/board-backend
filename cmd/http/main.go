@@ -39,6 +39,7 @@ func main() {
 			UserExists:         board.NewUserExists(userRepo),
 			GetUserByLogin:     board.NewGetUserByLogin(userRepo),
 			VerifyUserPassword: board.NewVerifyUserPassword(userRepo),
+			GetAdvertsList:     board.NewGetAdvertsList(advertRepo),
 		},
 	}
 
