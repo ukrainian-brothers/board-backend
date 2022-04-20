@@ -5,6 +5,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/ukrainian-brothers/board-backend/internal/common"
 	"math/rand"
+	"strings"
 	"testing"
 )
 
@@ -31,5 +32,5 @@ func NewStringPtr(s string) *string {
 }
 
 func RandomMail() *string {
-	return NewStringPtr(fmt.Sprintf("%s@wp.pl", RandomString(8)))
+	return NewStringPtr(strings.ToLower(fmt.Sprintf("%s@wp.pl", RandomString(12))))
 }

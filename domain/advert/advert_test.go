@@ -4,6 +4,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/ukrainian-brothers/board-backend/domain"
 	"github.com/ukrainian-brothers/board-backend/domain/user"
+	"github.com/ukrainian-brothers/board-backend/pkg/test_helpers"
 	. "github.com/ukrainian-brothers/board-backend/pkg/translation"
 	"testing"
 )
@@ -30,7 +31,7 @@ func TestAdvertNew(t *testing.T) {
 	usr, err := user.NewUser(
 		"Adam",
 		"Małysz",
-		"adam@wp.pl",
+		*test_helpers.RandomMail(),
 		"abc",
 		domain.ContactDetails{
 			Mail:        newStringPtr("mail"),

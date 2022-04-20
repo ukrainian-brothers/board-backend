@@ -3,6 +3,7 @@ package user
 import (
 	"github.com/stretchr/testify/assert"
 	"github.com/ukrainian-brothers/board-backend/domain"
+	"github.com/ukrainian-brothers/board-backend/pkg/test_helpers"
 	"testing"
 )
 
@@ -26,7 +27,7 @@ func TestUserCreation(t *testing.T) {
 			testName:  "correct data",
 			firstName: "Adam",
 			surname:   "Małysz",
-			login:     "adam@wp.pl",
+			login:     *test_helpers.RandomMail(),
 			password:  "abc",
 			contactDetails: domain.ContactDetails{
 				Mail:        newStringPtr("mail"),
@@ -38,7 +39,7 @@ func TestUserCreation(t *testing.T) {
 			testName:    "missing contact data",
 			firstName:   "Adam",
 			surname:     "Małysz",
-			login:       "a@wp.pl",
+			login:       *test_helpers.RandomMail(),
 			password:    "abc",
 			expectedErr: MissingContactDataErr,
 		},
@@ -46,7 +47,7 @@ func TestUserCreation(t *testing.T) {
 			testName:    "missing personal data",
 			firstName:   "",
 			surname:     "Małysz",
-			login:       "a@wp.pl",
+			login:       *test_helpers.RandomMail(),
 			password:    "abc",
 			expectedErr: MissingPersonalDataErr,
 		},

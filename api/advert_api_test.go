@@ -8,6 +8,7 @@ import (
 	"github.com/ukrainian-brothers/board-backend/internal"
 	"github.com/ukrainian-brothers/board-backend/internal/advert"
 	"github.com/ukrainian-brothers/board-backend/internal/user"
+	"github.com/ukrainian-brothers/board-backend/pkg/test_helpers"
 	. "github.com/ukrainian-brothers/board-backend/pkg/translation"
 	"net/http"
 	"testing"
@@ -63,7 +64,7 @@ func TestAddAdvertE2E(t *testing.T) {
 			},
 			payload: newAdvertPayload{
 				ContactDetails: contactPayload{
-					Mail: "mmmmmm@wp.pl",
+					Mail: *test_helpers.RandomMail(),
 				},
 			},
 			loggedIn: true,
@@ -76,7 +77,7 @@ func TestAddAdvertE2E(t *testing.T) {
 				Description: MultilingualString{English: "x"},
 				Type:        domain.AdvertTypeTransport,
 				ContactDetails: contactPayload{
-					Mail: "mmmmmm@wp.pl",
+					Mail: *test_helpers.RandomMail(),
 				},
 			},
 			expected: expected{

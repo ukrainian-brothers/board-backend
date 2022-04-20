@@ -11,6 +11,7 @@ import (
 	"github.com/ukrainian-brothers/board-backend/internal"
 	"github.com/ukrainian-brothers/board-backend/internal/common"
 	internalUser "github.com/ukrainian-brothers/board-backend/internal/user"
+	"github.com/ukrainian-brothers/board-backend/pkg/test_helpers"
 	. "github.com/ukrainian-brothers/board-backend/pkg/translation"
 	"testing"
 	"time"
@@ -122,14 +123,14 @@ func TestAdvertPostgresGet(t *testing.T) {
 					Password:  newStringPtr("passwordC1$23"),
 					FirstName: "Mac",
 					Surname:   "Cheese",
-					Mail:      newStringPtr("mail@wp.pl"),
+					Mail:      test_helpers.RandomMail(),
 				},
 				advertDB: AdvertDB{
 					ID:     uuid_("first_advert"),
 					UserID: uuid_("first_user"),
 					Type:   domain.AdvertTypeTransport,
 					ContactDetails: domain.ContactDetails{
-						Mail: newStringPtr("mail@wp.pl"),
+						Mail: test_helpers.RandomMail(),
 					},
 				},
 				advertDetailsDB: []AdvertDetailsDB{
@@ -223,7 +224,7 @@ func TestAdvertPostgresGetList(t *testing.T) {
 					Password:  newStringPtr("passwordC1$23"),
 					FirstName: "Mac",
 					Surname:   "Cheese",
-					Mail:      newStringPtr("mail@wp.pl"),
+					Mail:      test_helpers.RandomMail(),
 				},
 				advertDB: []AdvertDB{
 					{
@@ -231,7 +232,7 @@ func TestAdvertPostgresGetList(t *testing.T) {
 						UserID: uuid.MustParse("38e520dc-ac8c-44a6-be74-0c3bfb7a4576"),
 						Type:   domain.AdvertTypeTransport,
 						ContactDetails: domain.ContactDetails{
-							Mail: newStringPtr("mail@wp.pl"),
+							Mail: test_helpers.RandomMail(),
 						},
 					},
 					{
@@ -239,7 +240,7 @@ func TestAdvertPostgresGetList(t *testing.T) {
 						UserID: uuid.MustParse("38e520dc-ac8c-44a6-be74-0c3bfb7a4576"),
 						Type:   domain.AdvertTypeTransport,
 						ContactDetails: domain.ContactDetails{
-							Mail: newStringPtr("mail@wp.pl"),
+							Mail: test_helpers.RandomMail(),
 						},
 					},
 				},
