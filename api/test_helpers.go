@@ -203,12 +203,3 @@ func generateAdvertDetailsDB(advertID uuid.UUID, language translation.LanguageTa
 		Description: randomString(50),
 	}
 }
-
-var humanFriendlyUUIDMap = map[string]uuid.UUID{}
-
-func humanFriendlyUUID(s string) uuid.UUID {
-	if humanFriendlyUUIDMap[s] == uuid.Nil {
-		humanFriendlyUUIDMap[s] = uuid.New()
-	}
-	return humanFriendlyUUIDMap[s]
-}

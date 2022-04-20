@@ -5,6 +5,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/ukrainian-brothers/board-backend/domain"
+	"github.com/ukrainian-brothers/board-backend/internal"
 	"github.com/ukrainian-brothers/board-backend/internal/advert"
 	"github.com/ukrainian-brothers/board-backend/internal/user"
 	. "github.com/ukrainian-brothers/board-backend/pkg/translation"
@@ -143,7 +144,7 @@ func TestAdvertsListE2E(t *testing.T) {
 		pre      func(t *testing.T, inputDB inputDB)
 		cleanUp  func(t *testing.T, inputDB inputDB)
 	}
-	uuid_ := humanFriendlyUUID
+	uuid_ := internal.HumanFriendlyUUID
 	testCases := []testCase{
 		{
 			name: "success",
@@ -152,7 +153,7 @@ func TestAdvertsListE2E(t *testing.T) {
 			},
 			expected: expected{
 				status:                200,
-				advertResponsesLength: 10,
+				advertResponsesLength: 2,
 			},
 			inputDB: inputDB{
 				/*

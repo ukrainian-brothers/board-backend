@@ -110,13 +110,14 @@ func TestAdvertPostgresGet(t *testing.T) {
 		cleanUp     func(t *testing.T, input input)
 		expectedErr error
 	}
-
+	uuid_ := internal.HumanFriendlyUUID
 	testCases := []testCase{
 		{
 			name: "success",
 			input: input{
 				userDB: internalUser.UserDB{
-					ID:        uuid.MustParse("38e520dc-ac8c-44a6-be74-0c3bfb7a4576"),
+
+					ID:        uuid_("first_user"),
 					Login:     "login",
 					Password:  newStringPtr("passwordC1$23"),
 					FirstName: "Mac",
@@ -124,8 +125,8 @@ func TestAdvertPostgresGet(t *testing.T) {
 					Mail:      newStringPtr("mail@wp.pl"),
 				},
 				advertDB: AdvertDB{
-					ID:     uuid.MustParse("e8e1f982-992d-40c9-8389-1ca147c97ecd"),
-					UserID: uuid.MustParse("38e520dc-ac8c-44a6-be74-0c3bfb7a4576"),
+					ID:     uuid_("first_advert"),
+					UserID: uuid_("first_user"),
 					Type:   domain.AdvertTypeTransport,
 					ContactDetails: domain.ContactDetails{
 						Mail: newStringPtr("mail@wp.pl"),
@@ -134,7 +135,7 @@ func TestAdvertPostgresGet(t *testing.T) {
 				advertDetailsDB: []AdvertDetailsDB{
 					{
 						ID:          uuid.New(),
-						AdvertID:    uuid.MustParse("e8e1f982-992d-40c9-8389-1ca147c97ecd"),
+						AdvertID:    uuid_("first_advert"),
 						Language:    Ukrainian,
 						Title:       "титул",
 						Description: "опис",
