@@ -162,7 +162,7 @@ func (a AdvertAPI) AdvertsList(w http.ResponseWriter, r *http.Request) {
 		"offset": offset,
 	})
 
-	adverts, err := a.app.Queries.GetAdvertsList.Execute(ctx, langs, limit, offset) // TODO: pass real langage tags
+	adverts, err := a.app.Queries.GetAdvertsList.Execute(ctx, langs, limit, offset)
 	if err != nil {
 		log.WithError(err).Error("AdvertsList failed while fetching list of adverts")
 		WriteError(w, http.StatusInternalServerError, "")
