@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/ukrainian-brothers/board-backend/domain/user"
 	internal_user "github.com/ukrainian-brothers/board-backend/internal/user"
+	"github.com/ukrainian-brothers/board-backend/pkg/test_helpers"
 	"net/http"
 	"testing"
 )
@@ -324,7 +325,7 @@ func TestLoginE2E(t *testing.T) {
 			if tC.expected.sessionExists {
 				resp.Request.Header["Cookie"] = resp.Header["Set-Cookie"]
 
-				session, err := sessionStore.Get(resp.Request, getTestConfig(t).Session.SessionKey)
+				session, err := sessionStore.Get(resp.Request, test_helpers.GetTestConfig(t).Session.SessionKey)
 				assert.NoError(t, err)
 				assert.Equal(t, tC.payload.Login, session.Values["user_login"])
 			}

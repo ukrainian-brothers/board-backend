@@ -93,9 +93,9 @@ func TestAddAdvertE2E(t *testing.T) {
 		t.Run(tC.name, func(t *testing.T) {
 			var cookies []*http.Cookie
 			if tC.loggedIn {
-				testUser := createTestUser(t, "test_login1213930", userRepo)
-				cookies = createTestSession(t, testUser, sessionStore)
-				defer removeTestUser(t, testUser.ID, userRepo)
+				testUser := user.CreateTestUser(t, "test_login1213930", userRepo)
+				cookies = user.CreateTestSession(t, testUser, sessionStore)
+				defer user.RemoveTestUser(t, testUser.ID, userRepo)
 				if tC.cleanUp != nil {
 					defer tC.cleanUp(t, testUser.ID)
 				}
@@ -166,18 +166,18 @@ func TestAdvertsListE2E(t *testing.T) {
 							- AdvertDetails: Ukrainian
 							- AdvertDetails: English
 				*/
-				userDB: generateUserDB(uuid_("first_user")),
+				userDB: user.GenerateUserDB(uuid_("first_user")),
 				advertsDB: []advert.AdvertDB{
-					generateAdvertDB(uuid_("first_advert"), uuid_("first_user")),
-					generateAdvertDB(uuid_("second_advert"), uuid_("first_user")),
+					advert.GenerateTestAdvertDB(uuid_("first_advert"), uuid_("first_user")),
+					advert.GenerateTestAdvertDB(uuid_("second_advert"), uuid_("first_user")),
 				},
 				advertDetailsDB: []advert.AdvertDetailsDB{
-					generateAdvertDetailsDB(uuid_("first_advert"), Ukrainian),
-					generateAdvertDetailsDB(uuid_("first_advert"), English),
-					generateAdvertDetailsDB(uuid_("first_advert"), "xx"), // unknown language
+					advert.GenerateTestAdvertDetailsDB(uuid_("first_advert"), Ukrainian),
+					advert.GenerateTestAdvertDetailsDB(uuid_("first_advert"), English),
+					advert.GenerateTestAdvertDetailsDB(uuid_("first_advert"), "xx"), // unknown language
 
-					generateAdvertDetailsDB(uuid_("second_advert"), Ukrainian),
-					generateAdvertDetailsDB(uuid_("second_advert"), English),
+					advert.GenerateTestAdvertDetailsDB(uuid_("second_advert"), Ukrainian),
+					advert.GenerateTestAdvertDetailsDB(uuid_("second_advert"), English),
 				},
 			},
 			pre: func(t *testing.T, inputDB inputDB) {
