@@ -213,66 +213,22 @@ func TestAdvertPostgresGetList(t *testing.T) {
 		cleanUp  func(t *testing.T, input dbInput)
 		expected expected
 	}
-
+	uuid_ := internal.HumanFriendlyUUID
 	testCases := []testCase{
 		{
 			name: "success",
 			dbInput: dbInput{
-				userDB: internalUser.UserDB{
-					ID:        uuid.MustParse("38e520dc-ac8c-44a6-be74-0c3bfb7a4576"),
-					Login:     "login",
-					Password:  newStringPtr("passwordC1$23"),
-					FirstName: "Mac",
-					Surname:   "Cheese",
-					Mail:      test_helpers.RandomMail(),
-				},
+				userDB: internalUser.GenerateTestUserDB(uuid_("first_user")),
 				advertDB: []AdvertDB{
-					{
-						ID:     uuid.MustParse("e8e1f982-992d-40c9-8389-1ca147c97ecd"),
-						UserID: uuid.MustParse("38e520dc-ac8c-44a6-be74-0c3bfb7a4576"),
-						Type:   domain.AdvertTypeTransport,
-						ContactDetails: domain.ContactDetails{
-							Mail: test_helpers.RandomMail(),
-						},
-					},
-					{
-						ID:     uuid.MustParse("d69ab3bb-ee0f-41f9-bd38-0865c89953c5"),
-						UserID: uuid.MustParse("38e520dc-ac8c-44a6-be74-0c3bfb7a4576"),
-						Type:   domain.AdvertTypeTransport,
-						ContactDetails: domain.ContactDetails{
-							Mail: test_helpers.RandomMail(),
-						},
-					},
+					GenerateTestAdvertDB(uuid_("first_advert"), uuid_("first_user")),
+					GenerateTestAdvertDB(uuid_("second_advert"), uuid_("first_user")),
 				},
 				advertDetailsDB: []AdvertDetailsDB{
-					{
-						ID:          uuid.New(),
-						AdvertID:    uuid.MustParse("e8e1f982-992d-40c9-8389-1ca147c97ecd"),
-						Language:    Ukrainian,
-						Title:       "титул",
-						Description: "опис",
-					},
-					{
-						ID:          uuid.New(),
-						AdvertID:    uuid.MustParse("e8e1f982-992d-40c9-8389-1ca147c97ecd"),
-						Language:    English,
-						Title:       "title",
-						Description: "description",
-					},
-					{
-						ID:          uuid.New(),
-						AdvertID:    uuid.MustParse("e8e1f982-992d-40c9-8389-1ca147c97ecd"),
-						Language:    "XX", // unknown language, shouldn't exist in result
-						Title:       "title",
-						Description: "description",
-					},
-					{
-						ID:          uuid.New(),
-						AdvertID:    uuid.MustParse("d69ab3bb-ee0f-41f9-bd38-0865c89953c5"),
-						Language:    English,
-						Title:       "title",
-						Description: "description",
-					},
+					GenerateTestAdvertDetailsDB(uuid_("first_advert"), Ukrainian),
+					GenerateTestAdvertDetailsDB(uuid_("first_advert"), English),
+					GenerateTestAdvertDetailsDB(uuid_("first_advert"), "XX"),
+
+					GenerateTestAdvertDetailsDB(uuid_("second_advert"), English),
 				},
 			},
 			input: input{

@@ -55,7 +55,7 @@ func CreateTestSession(t *testing.T, usr *user.User, store sessions.Store) []*ht
 	return w.Result().Cookies()
 }
 
-func GenerateUserDB(id uuid.UUID) UserDB {
+func GenerateTestUserDB(id uuid.UUID) UserDB {
 	usr := UserDB{
 		ID:        id,
 		Login:     test_helpers.RandomString(10),

@@ -167,7 +167,7 @@ func TestAdvertsListE2E(t *testing.T) {
 							- AdvertDetails: Ukrainian
 							- AdvertDetails: English
 				*/
-				userDB: user.GenerateUserDB(uuid_("first_user")),
+				userDB: user.GenerateTestUserDB(uuid_("first_user")),
 				advertsDB: []advert.AdvertDB{
 					advert.GenerateTestAdvertDB(uuid_("first_advert"), uuid_("first_user")),
 					advert.GenerateTestAdvertDB(uuid_("second_advert"), uuid_("first_user")),
