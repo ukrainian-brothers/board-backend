@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/go-gorp/gorp"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
@@ -18,10 +19,13 @@ import (
 	internal_advert "github.com/ukrainian-brothers/board-backend/internal/advert"
 	"github.com/ukrainian-brothers/board-backend/internal/common"
 	internal_user "github.com/ukrainian-brothers/board-backend/internal/user"
+	"github.com/ukrainian-brothers/board-backend/pkg/translation"
 	"io"
+	"math/rand"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 )
 
 func newStringPtr(s string) *string {
@@ -62,6 +66,7 @@ func createTestAPIs(t *testing.T, advertRepo advert.Repository, userRepo user.Re
 			UserExists:         board.NewUserExists(userRepo),
 			GetUserByLogin:     board.NewGetUserByLogin(userRepo),
 			VerifyUserPassword: board.NewVerifyUserPassword(userRepo),
+			GetAdvertsList:     board.NewGetAdvertsList(advertRepo),
 		},
 	}
 
@@ -148,4 +153,62 @@ func getTestConfig(t *testing.T) *common.Config {
 	cfg, err := common.NewConfigFromFile("../config/configuration.test.local.json")
 	assert.NoError(t, err)
 	return cfg
+}
+
+func randomString(length int) string {
+	by := make([]byte, length)
+	for i := 0; i < length; i++ {
+		by[i] = byte(65 + rand.Intn(25))
+	}
+	return string(by)
+}
+
+func randomNumberRange(min, max int) int {
+	return rand.Intn(max-min) + min
+}
+
+func randomMail() *string {
+	return newStringPtr(fmt.Sprintf("%s@wp.pl", randomString(8)))
+}
+
+func generateUserDB(id uuid.UUID) internal_user.UserDB {
+	usr := internal_user.UserDB{
+		ID:        id,
+		Login:     randomString(10),
+		FirstName: randomString(10),
+		Surname:   randomString(10),
+		Mail:      randomMail(),
+	}
+	return usr
+}
+
+func generateAdvertDB(advertID uuid.UUID, userID uuid.UUID) internal_advert.AdvertDB {
+	return internal_advert.AdvertDB{
+		ID:     advertID,
+		UserID: userID,
+		Type:   domain.AdvertTypeTransport,
+		Views:  randomNumberRange(0, 150),
+		ContactDetails: domain.ContactDetails{
+			Mail: randomMail(),
+		},
+		CreatedAt: time.Now(),
+	}
+}
+func generateAdvertDetailsDB(advertID uuid.UUID, language translation.LanguageTag) internal_advert.AdvertDetailsDB {
+	return internal_advert.AdvertDetailsDB{
+		ID:          uuid.New(),
+		AdvertID:    advertID,
+		Language:    language,
+		Title:       randomString(10),
+		Description: randomString(50),
+	}
+}
+
+var humanFriendlyUUIDMap = map[string]uuid.UUID{}
+
+func humanFriendlyUUID(s string) uuid.UUID {
+	if humanFriendlyUUIDMap[s] == uuid.Nil {
+		humanFriendlyUUIDMap[s] = uuid.New()
+	}
+	return humanFriendlyUUIDMap[s]
 }

@@ -13,6 +13,8 @@ import (
 	"github.com/ukrainian-brothers/board-backend/internal/common"
 	. "github.com/ukrainian-brothers/board-backend/pkg/translation"
 	"net/http"
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -27,13 +29,13 @@ type AdvertAPI struct {
 func NewAdvertAPI(r *mux.Router, log *logrus.Entry, app application.Application, middleware *MiddlewareProvider, sessionStore *sessions.CookieStore, cfg *common.Config) *AdvertAPI {
 	advertApi := AdvertAPI{router: r, app: app, log: log, sessionStore: sessionStore, cfg: cfg}
 	r.HandleFunc("/api/adverts", middleware.AuthMiddleware(advertApi.AddAdvert, log)).Methods("POST")
-	r.HandleFunc("/api/adverts", middleware.AuthMiddleware(advertApi.AdvertsList, log)).Methods("GET")
+	r.HandleFunc("/api/adverts", advertApi.AdvertsList).Methods("GET")
 	return &advertApi
 }
 
 type contactPayload struct {
-	Mail        string
-	PhoneNumber string
+	Mail        string `json:"mail"`
+	PhoneNumber string `json:"phone"`
 }
 type newAdvertPayload struct {
 	Title          MultilingualString `json:"title"`
@@ -125,13 +127,59 @@ func (a *advertResponse) LoadAdvert(adv *advert.Advert) {
 	a.Title = adv.Details.Title
 	a.Description = adv.Details.Description
 	a.Type = adv.Details.Type
-	a.ContactDetails.Mail = *adv.Details.ContactDetails.Mail
-	a.ContactDetails.PhoneNumber = *adv.Details.ContactDetails.PhoneNumber
 	a.CreatedAt = adv.CreatedAt
 	a.UpdatedAt = adv.UpdatedAt
 	a.DestroyedAt = adv.DestroyedAt
+	if adv.Details.ContactDetails.Mail != nil {
+		a.ContactDetails.Mail = *adv.Details.ContactDetails.Mail
+	}
+
+	if adv.Details.ContactDetails.PhoneNumber != nil {
+		a.ContactDetails.PhoneNumber = *adv.Details.ContactDetails.PhoneNumber
+	}
 }
 
+const MaxAdvertsInResponse = 50
+
 func (a AdvertAPI) AdvertsList(w http.ResponseWriter, r *http.Request) {
-	WriteJSON(w, 501, map[string]string{"status": "not implemented yet"})
+	ctx := r.Context()
+
+	limit, err := strconv.Atoi(r.FormValue("limit"))
+	if err != nil {
+		limit = MaxAdvertsInResponse
+	}
+
+	offset, err := strconv.Atoi(r.FormValue("offset"))
+	if err != nil {
+		offset = 0
+	}
+
+	// Will load languages from url param &langs=ua,pl,en into slice
+	langs := LanguageTags{}.FromStrings(strings.Split(r.FormValue("langs"), ","))
+
+	log := a.log.WithFields(logrus.Fields{
+		"limit":  limit,
+		"offset": offset,
+	})
+
+	adverts, err := a.app.Queries.GetAdvertsList.Execute(ctx, langs, limit, offset) // TODO: pass real langage tags
+	if err != nil {
+		log.WithError(err).Error("AdvertsList failed while fetching list of adverts")
+		WriteError(w, http.StatusInternalServerError, "")
+		return
+	}
+
+	if len(adverts) == 0 {
+		WriteJSON(w, 200, []advertResponse{})
+		return
+	}
+
+	var response []advertResponse
+	for _, adv := range adverts {
+		advResponse := advertResponse{}
+		advResponse.LoadAdvert(adv)
+		response = append(response, advResponse)
+	}
+
+	WriteJSON(w, 200, response)
 }

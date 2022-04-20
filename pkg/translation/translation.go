@@ -6,6 +6,27 @@ import (
 
 type LanguageTag string // ISO 639-1
 
+type LanguageTags []LanguageTag
+
+func (l LanguageTags) FromStrings(tags []string) LanguageTags {
+	langTags := l
+	for _, tag := range tags {
+		langTags = append(langTags, LanguageTag(tag))
+	}
+	return langTags
+}
+
+func (l LanguageTags) Empty() bool {
+	if l == nil {
+		return true
+	}
+	if len(l) == 0 {
+		return true
+	}
+
+	return l[0] == ""
+}
+
 const (
 	English   LanguageTag = "en"
 	Polish    LanguageTag = "pl"

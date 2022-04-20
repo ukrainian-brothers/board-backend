@@ -8,6 +8,7 @@ import (
 	"github.com/ukrainian-brothers/board-backend/domain"
 	"github.com/ukrainian-brothers/board-backend/domain/advert"
 	"github.com/ukrainian-brothers/board-backend/domain/user"
+	"github.com/ukrainian-brothers/board-backend/internal"
 	"github.com/ukrainian-brothers/board-backend/internal/common"
 	internalUser "github.com/ukrainian-brothers/board-backend/internal/user"
 	. "github.com/ukrainian-brothers/board-backend/pkg/translation"
@@ -23,8 +24,7 @@ func getContactDetails() domain.ContactDetails {
 }
 
 func TestAdvertPostgresAdd(t *testing.T) {
-	cfg, err := common.NewConfigFromFile("../../config/configuration.test.local.json")
-	assert.NoError(t, err)
+	cfg := internal.GetTestConfig(t)
 
 	db, err := common.InitPostgres(&cfg.Postgres)
 	require.NoError(t, err)
@@ -90,8 +90,7 @@ func TestAdvertPostgresAdd(t *testing.T) {
 }
 
 func TestAdvertPostgresGet(t *testing.T) {
-	cfg, err := common.NewConfigFromFile("../../config/configuration.test.local.json")
-	assert.NoError(t, err)
+	cfg := internal.GetTestConfig(t)
 
 	db, err := common.InitPostgres(&cfg.Postgres)
 	require.NoError(t, err)
@@ -101,8 +100,8 @@ func TestAdvertPostgresGet(t *testing.T) {
 
 	type input struct {
 		userDB          internalUser.UserDB
-		advertDB        advertDB
-		advertDetailsDB []advertDetailsDB
+		advertDB        AdvertDB
+		advertDetailsDB []AdvertDetailsDB
 	}
 	type testCase struct {
 		name        string
@@ -124,7 +123,7 @@ func TestAdvertPostgresGet(t *testing.T) {
 					Surname:   "Cheese",
 					Mail:      newStringPtr("mail@wp.pl"),
 				},
-				advertDB: advertDB{
+				advertDB: AdvertDB{
 					ID:     uuid.MustParse("e8e1f982-992d-40c9-8389-1ca147c97ecd"),
 					UserID: uuid.MustParse("38e520dc-ac8c-44a6-be74-0c3bfb7a4576"),
 					Type:   domain.AdvertTypeTransport,
@@ -132,7 +131,7 @@ func TestAdvertPostgresGet(t *testing.T) {
 						Mail: newStringPtr("mail@wp.pl"),
 					},
 				},
-				advertDetailsDB: []advertDetailsDB{
+				advertDetailsDB: []AdvertDetailsDB{
 					{
 						ID:          uuid.New(),
 						AdvertID:    uuid.MustParse("e8e1f982-992d-40c9-8389-1ca147c97ecd"),
@@ -179,8 +178,7 @@ func TestAdvertPostgresGet(t *testing.T) {
 }
 
 func TestAdvertPostgresGetList(t *testing.T) {
-	cfg, err := common.NewConfigFromFile("../../config/configuration.test.local.json")
-	assert.NoError(t, err)
+	cfg := internal.GetTestConfig(t)
 
 	db, err := common.InitPostgres(&cfg.Postgres)
 	require.NoError(t, err)
@@ -190,8 +188,8 @@ func TestAdvertPostgresGetList(t *testing.T) {
 
 	type dbInput struct {
 		userDB          internalUser.UserDB
-		advertDB        []advertDB
-		advertDetailsDB []advertDetailsDB
+		advertDB        []AdvertDB
+		advertDetailsDB []AdvertDetailsDB
 	}
 
 	type input struct {
@@ -226,7 +224,7 @@ func TestAdvertPostgresGetList(t *testing.T) {
 					Surname:   "Cheese",
 					Mail:      newStringPtr("mail@wp.pl"),
 				},
-				advertDB: []advertDB{
+				advertDB: []AdvertDB{
 					{
 						ID:     uuid.MustParse("e8e1f982-992d-40c9-8389-1ca147c97ecd"),
 						UserID: uuid.MustParse("38e520dc-ac8c-44a6-be74-0c3bfb7a4576"),
@@ -244,7 +242,7 @@ func TestAdvertPostgresGetList(t *testing.T) {
 						},
 					},
 				},
-				advertDetailsDB: []advertDetailsDB{
+				advertDetailsDB: []AdvertDetailsDB{
 					{
 						ID:          uuid.New(),
 						AdvertID:    uuid.MustParse("e8e1f982-992d-40c9-8389-1ca147c97ecd"),

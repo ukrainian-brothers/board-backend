@@ -17,8 +17,8 @@ type PostgresAdvertRepository struct {
 }
 
 func NewPostgresAdvertRepository(db *gorp.DbMap) *PostgresAdvertRepository {
-	db.AddTableWithName(advertDB{}, "adverts").SetKeys(false, "id")
-	db.AddTableWithName(advertDetailsDB{}, "adverts_details").SetKeys(false, "id")
+	db.AddTableWithName(AdvertDB{}, "adverts").SetKeys(false, "id")
+	db.AddTableWithName(AdvertDetailsDB{}, "adverts_details").SetKeys(false, "id")
 
 	return &PostgresAdvertRepository{
 		db: db,
@@ -29,7 +29,7 @@ func newStringPtr(s string) *string {
 	return &s
 }
 
-type advertDB struct {
+type AdvertDB struct {
 	ID             uuid.UUID             `db:"id"`
 	UserID         uuid.UUID             `db:"user_id"`
 	Type           domain.AdvertType     `db:"type"`
@@ -40,7 +40,7 @@ type advertDB struct {
 	DestroyedAt    *time.Time            `db:"destroyed_at"`
 }
 
-type advertDetailsDB struct {
+type AdvertDetailsDB struct {
 	ID          uuid.UUID   `db:"id"`
 	AdvertID    uuid.UUID   `db:"advert_id"`
 	Language    LanguageTag `db:"language"` // ISO 639-1
@@ -73,7 +73,7 @@ func (tr *advertTranslations) Filter(langs []LanguageTag) {
 
 func (repo PostgresAdvertRepository) getAdvertTranslations(ctx context.Context, advertID uuid.UUID) (advertTranslations, error) {
 	sqlExec := repo.db.WithContext(ctx)
-	var advDetailsDB []advertDetailsDB
+	var advDetailsDB []AdvertDetailsDB
 	_, err := sqlExec.Select(&advDetailsDB, "SELECT * FROM adverts_details WHERE advert_id=$1", advertID.String())
 	if err != nil {
 		return advertTranslations{}, fmt.Errorf("failed getting advert translations: %w", err)
@@ -98,7 +98,7 @@ func (repo PostgresAdvertRepository) Get(ctx context.Context, id uuid.UUID) (adv
 	sqlExec := repo.db.WithContext(ctx)
 
 	type advertAndUserDB struct {
-		advertDB
+		AdvertDB
 		ID          uuid.UUID `db:"id"`
 		Login       string    `db:"login"`
 		Password    *string   `db:"password"`
@@ -151,7 +151,7 @@ func (repo PostgresAdvertRepository) Add(ctx context.Context, advert *advert.Adv
 	}
 	sqlExecutor := trans.WithContext(ctx)
 
-	advertDb := advertDB{
+	advertDb := AdvertDB{
 		ID:             advert.ID,
 		UserID:         advert.User.ID,
 		Type:           advert.Details.Type,
@@ -172,7 +172,7 @@ func (repo PostgresAdvertRepository) Add(ctx context.Context, advert *advert.Adv
 			continue
 		}
 
-		advertDetailsDB := advertDetailsDB{
+		advertDetailsDB := AdvertDetailsDB{
 			ID:          uuid.New(),
 			AdvertID:    advert.ID,
 			Language:    lang,
@@ -188,10 +188,10 @@ func (repo PostgresAdvertRepository) Add(ctx context.Context, advert *advert.Adv
 	return trans.Commit()
 }
 
-func (repo PostgresAdvertRepository) GetList(ctx context.Context, langs []LanguageTag, limit int, offset int) ([]*advert.Advert, error) {
+func (repo PostgresAdvertRepository) GetList(ctx context.Context, langs LanguageTags, limit int, offset int) ([]*advert.Advert, error) {
 	sqlExec := repo.db.WithContext(ctx)
 
-	var advertsDB []advertDB
+	var advertsDB []AdvertDB
 	_, err := sqlExec.Select(&advertsDB, "SELECT * FROM adverts LIMIT $1 OFFSET $2", limit, offset)
 	if err != nil {
 		return nil, fmt.Errorf("failed selecting many adverts with translations: %w", err)
@@ -203,7 +203,11 @@ func (repo PostgresAdvertRepository) GetList(ctx context.Context, langs []Langua
 		if err != nil {
 			return nil, err
 		}
-		translation.Filter(langs)
+
+		// don't filter if there are no langs selected
+		if !langs.Empty() {
+			translation.Filter(langs)
+		}
 
 		if translation.Title.Empty() || translation.Description.Empty() {
 			continue

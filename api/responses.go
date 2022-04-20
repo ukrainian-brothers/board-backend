@@ -13,8 +13,9 @@ type errorStruct struct {
 
 func WriteJSON(w http.ResponseWriter, statusCode int, dataStruct interface{}) {
 	w.Header().Set("Content-Type", "application/json")
-	marshal, err := json.Marshal(dataStruct)
 	w.WriteHeader(statusCode)
+
+	marshal, err := json.Marshal(dataStruct)
 	if err != nil {
 		newError := errorStruct{Error: http.StatusText(http.StatusInternalServerError)}
 		bytes, _ := json.Marshal(newError)

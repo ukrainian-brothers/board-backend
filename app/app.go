@@ -12,6 +12,7 @@ type Queries struct {
 	GetUserByLogin     board.GetUserByLogin
 	UserExists         board.UserExists
 	VerifyUserPassword board.VerifyUserPassword
+	GetAdvertsList     board.GetAdvertsList
 }
 
 type Application struct {
