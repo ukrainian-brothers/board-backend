@@ -8,8 +8,10 @@ import (
 	"github.com/ukrainian-brothers/board-backend/domain"
 	"github.com/ukrainian-brothers/board-backend/domain/advert"
 	"github.com/ukrainian-brothers/board-backend/domain/user"
+	"github.com/ukrainian-brothers/board-backend/internal"
 	"github.com/ukrainian-brothers/board-backend/internal/common"
 	internalUser "github.com/ukrainian-brothers/board-backend/internal/user"
+	"github.com/ukrainian-brothers/board-backend/pkg/test_helpers"
 	. "github.com/ukrainian-brothers/board-backend/pkg/translation"
 	"testing"
 	"time"
@@ -23,8 +25,7 @@ func getContactDetails() domain.ContactDetails {
 }
 
 func TestAdvertPostgresAdd(t *testing.T) {
-	cfg, err := common.NewConfigFromFile("../../config/configuration.test.local.json")
-	assert.NoError(t, err)
+	cfg := internal.GetTestConfig(t)
 
 	db, err := common.InitPostgres(&cfg.Postgres)
 	require.NoError(t, err)
@@ -90,8 +91,7 @@ func TestAdvertPostgresAdd(t *testing.T) {
 }
 
 func TestAdvertPostgresGet(t *testing.T) {
-	cfg, err := common.NewConfigFromFile("../../config/configuration.test.local.json")
-	assert.NoError(t, err)
+	cfg := internal.GetTestConfig(t)
 
 	db, err := common.InitPostgres(&cfg.Postgres)
 	require.NoError(t, err)
@@ -101,8 +101,8 @@ func TestAdvertPostgresGet(t *testing.T) {
 
 	type input struct {
 		userDB          internalUser.UserDB
-		advertDB        advertDB
-		advertDetailsDB []advertDetailsDB
+		advertDB        AdvertDB
+		advertDetailsDB []AdvertDetailsDB
 	}
 	type testCase struct {
 		name        string
@@ -111,31 +111,32 @@ func TestAdvertPostgresGet(t *testing.T) {
 		cleanUp     func(t *testing.T, input input)
 		expectedErr error
 	}
-
+	uuid_ := internal.HumanFriendlyUUID
 	testCases := []testCase{
 		{
 			name: "success",
 			input: input{
 				userDB: internalUser.UserDB{
-					ID:        uuid.MustParse("38e520dc-ac8c-44a6-be74-0c3bfb7a4576"),
+
+					ID:        uuid_("first_user"),
 					Login:     "login",
 					Password:  newStringPtr("passwordC1$23"),
 					FirstName: "Mac",
 					Surname:   "Cheese",
-					Mail:      newStringPtr("mail@wp.pl"),
+					Mail:      test_helpers.RandomMail(),
 				},
-				advertDB: advertDB{
-					ID:     uuid.MustParse("e8e1f982-992d-40c9-8389-1ca147c97ecd"),
-					UserID: uuid.MustParse("38e520dc-ac8c-44a6-be74-0c3bfb7a4576"),
+				advertDB: AdvertDB{
+					ID:     uuid_("first_advert"),
+					UserID: uuid_("first_user"),
 					Type:   domain.AdvertTypeTransport,
 					ContactDetails: domain.ContactDetails{
-						Mail: newStringPtr("mail@wp.pl"),
+						Mail: test_helpers.RandomMail(),
 					},
 				},
-				advertDetailsDB: []advertDetailsDB{
+				advertDetailsDB: []AdvertDetailsDB{
 					{
 						ID:          uuid.New(),
-						AdvertID:    uuid.MustParse("e8e1f982-992d-40c9-8389-1ca147c97ecd"),
+						AdvertID:    uuid_("first_advert"),
 						Language:    Ukrainian,
 						Title:       "титул",
 						Description: "опис",
@@ -153,8 +154,9 @@ func TestAdvertPostgresGet(t *testing.T) {
 			},
 			cleanUp: func(t *testing.T, input input) {
 				_, err := db.Exec("DELETE FROM adverts WHERE id=$1", input.advertDB.ID)
-				assert.NoError(t, err)
 				// advert_details should be removed due to fk policy
+				assert.NoError(t, err)
+
 				_, err = db.Exec("DELETE FROM users WHERE id=$1", input.userDB.ID)
 				assert.NoError(t, err)
 			},
@@ -172,6 +174,110 @@ func TestAdvertPostgresGet(t *testing.T) {
 
 			_, err := repo.Get(context.Background(), tC.input.advertDB.ID)
 			assert.Equal(t, tC.expectedErr, err)
+
+		})
+	}
+}
+
+func TestAdvertPostgresGetList(t *testing.T) {
+	cfg := internal.GetTestConfig(t)
+
+	db, err := common.InitPostgres(&cfg.Postgres)
+	require.NoError(t, err)
+
+	repo := NewPostgresAdvertRepository(db)
+	db.AddTableWithName(internalUser.UserDB{}, "users").SetKeys(false, "id")
+
+	type dbInput struct {
+		userDB          internalUser.UserDB
+		advertDB        []AdvertDB
+		advertDetailsDB []AdvertDetailsDB
+	}
+
+	type input struct {
+		langs  []LanguageTag
+		limit  int
+		offset int
+	}
+
+	type expected struct {
+		err        error
+		advertsLen int
+	}
+
+	type testCase struct {
+		name     string
+		dbInput  dbInput
+		input    input
+		pre      func(t *testing.T, input dbInput)
+		cleanUp  func(t *testing.T, input dbInput)
+		expected expected
+	}
+	uuid_ := internal.HumanFriendlyUUID
+	testCases := []testCase{
+		{
+			name: "success",
+			dbInput: dbInput{
+				userDB: internalUser.GenerateTestUserDB(uuid_("first_user")),
+				advertDB: []AdvertDB{
+					GenerateTestAdvertDB(uuid_("first_advert"), uuid_("first_user")),
+					GenerateTestAdvertDB(uuid_("second_advert"), uuid_("first_user")),
+				},
+				advertDetailsDB: []AdvertDetailsDB{
+					GenerateTestAdvertDetailsDB(uuid_("first_advert"), Ukrainian),
+					GenerateTestAdvertDetailsDB(uuid_("first_advert"), English),
+					GenerateTestAdvertDetailsDB(uuid_("first_advert"), "XX"),
+
+					GenerateTestAdvertDetailsDB(uuid_("second_advert"), English),
+				},
+			},
+			input: input{
+				langs: []LanguageTag{English},
+				limit: 10,
+			},
+			pre: func(t *testing.T, input dbInput) {
+				err := db.Insert(&input.userDB)
+				assert.NoError(t, err)
+
+				for _, advDB := range input.advertDB {
+					err := db.Insert(&advDB)
+					assert.NoError(t, err)
+				}
+
+				for _, detailsDb := range input.advertDetailsDB {
+					err := db.Insert(&detailsDb)
+					assert.NoError(t, err)
+				}
+			},
+			cleanUp: func(t *testing.T, input dbInput) {
+				for _, advertDB := range input.advertDB {
+					_, err := db.Exec("DELETE FROM adverts WHERE id=$1", advertDB.ID)
+					// advert_details should be removed due to fk policy
+					assert.NoError(t, err)
+				}
+
+				_, err = db.Exec("DELETE FROM users WHERE id=$1", input.userDB.ID)
+				assert.NoError(t, err)
+			},
+			expected: expected{
+				err:        nil,
+				advertsLen: 2,
+			},
+		},
+	}
+
+	for _, tC := range testCases {
+		t.Run(tC.name, func(t *testing.T) {
+			if tC.pre != nil {
+				tC.pre(t, tC.dbInput)
+			}
+			if tC.cleanUp != nil {
+				defer tC.cleanUp(t, tC.dbInput)
+			}
+
+			adverts, err := repo.GetList(context.Background(), tC.input.langs, tC.input.limit, tC.input.offset)
+			assert.Equal(t, tC.expected.err, err)
+			assert.Equal(t, tC.expected.advertsLen, len(adverts))
 
 		})
 	}

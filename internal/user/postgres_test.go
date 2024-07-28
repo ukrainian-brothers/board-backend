@@ -17,13 +17,6 @@ func newStringPtr(s string) *string {
 	return &s
 }
 
-func getValidContactDetails() domain.ContactDetails {
-	return domain.ContactDetails{
-		Mail:        newStringPtr("adam@wp.pl"),
-		PhoneNumber: newStringPtr("111222333"),
-	}
-}
-
 func TestUserPostgresAdd(t *testing.T) {
 	cfg, err := common.NewConfigFromFile("../../config/configuration.test.local.json")
 	assert.NoError(t, err)
@@ -51,7 +44,7 @@ func TestUserPostgresAdd(t *testing.T) {
 					FirstName: "Adam",
 					Surname:   "Małysz",
 				},
-				ContactDetails: getValidContactDetails(),
+				ContactDetails: internalUser.GetValidContactDetails(),
 			},
 			cleanUp: func(t *testing.T, id string) {
 				_, err := db.Exec("DELETE FROM users WHERE id=$1", id)
@@ -98,7 +91,7 @@ func TestGetById(t *testing.T) {
 					FirstName: "Foo",
 					Surname:   "Bar",
 				},
-				ContactDetails: getValidContactDetails(),
+				ContactDetails: internalUser.GetValidContactDetails(),
 			},
 			pre: func(t *testing.T, user *user.User) {
 				usrDB := internalUser.UserDB{}
@@ -167,7 +160,7 @@ func TestGetByLogin(t *testing.T) {
 					FirstName: "Foo",
 					Surname:   "Bar",
 				},
-				ContactDetails: getValidContactDetails(),
+				ContactDetails: internalUser.GetValidContactDetails(),
 			},
 			pre: func(t *testing.T, usr *user.User) {
 				usrDB := internalUser.UserDB{}
@@ -238,7 +231,7 @@ func TestUserExists(t *testing.T) {
 				Login:          "login",
 				Password:       newStringPtr("pass"),
 				Person:         domain.Person{FirstName: "abc", Surname: "dawdwa"},
-				ContactDetails: getValidContactDetails(),
+				ContactDetails: internalUser.GetValidContactDetails(),
 			},
 			pre: func(t *testing.T, usr *user.User) {
 				userDB := internalUser.UserDB{}

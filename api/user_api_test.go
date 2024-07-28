@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/ukrainian-brothers/board-backend/domain/user"
 	internal_user "github.com/ukrainian-brothers/board-backend/internal/user"
+	"github.com/ukrainian-brothers/board-backend/pkg/test_helpers"
 	"net/http"
 	"testing"
 )
@@ -45,7 +46,7 @@ func TestRegistrationE2E(t *testing.T) {
 			payload: &registerPayload{
 				Login:    "the_new_user2115",
 				Password: "pass",
-				Mail:     "mrosiak@wp.pl",
+				Mail:     *test_helpers.RandomMail(),
 				Phone:    "+48 111 222 333",
 			},
 			expected: expected{
@@ -62,7 +63,7 @@ func TestRegistrationE2E(t *testing.T) {
 				Password:  "pass",
 				Firstname: "Mac",
 				Surname:   "Cheese",
-				Mail:      "mrosiak@wp.pl",
+				Mail:      *test_helpers.RandomMail(),
 				Phone:     "+48 111 222 333",
 			},
 			cleanUp: func(t *testing.T, payload *registerPayload) {
@@ -80,7 +81,7 @@ func TestRegistrationE2E(t *testing.T) {
 				Password:  "pass",
 				Firstname: "Mac",
 				Surname:   "Cheese",
-				Mail:      "mrosiak@wp.pl",
+				Mail:      *test_helpers.RandomMail(),
 				Phone:     "+48 111 222 333",
 			},
 			pre: func(t *testing.T, payload *registerPayload) {
@@ -246,7 +247,7 @@ func TestLoginE2E(t *testing.T) {
 					Password:  newStringPtr("$argon2id$v=19$m=65536,t=3,p=2$2AhHwyZVY7yNE8PJjOOIrg$ZvmY83U2SXVdzKl3CKM7z8U1R8CzFj3HO5J2p4LDBXo"),
 					FirstName: "Mac",
 					Surname:   "Cheese",
-					Mail:      newStringPtr("macncheese@wp.pl"),
+					Mail:      test_helpers.RandomMail(),
 				}
 				err := db.Insert(&usrDB)
 				assert.NoError(t, err)
@@ -273,7 +274,7 @@ func TestLoginE2E(t *testing.T) {
 					Password:  newStringPtr("$argon2id$v=19$m=65536,t=3,p=2$2AhHwyZVY7yNE8PJjOOIrg$ZvmY83U2SXVdzKl3CKM7z8U1R8CzFj3HO5J2p4LDBXo"),
 					FirstName: "Mac",
 					Surname:   "Cheese",
-					Mail:      newStringPtr("macncheese@wp.pl"),
+					Mail:      test_helpers.RandomMail(),
 				}
 				err := db.Insert(&usrDB)
 				assert.NoError(t, err)
@@ -324,7 +325,7 @@ func TestLoginE2E(t *testing.T) {
 			if tC.expected.sessionExists {
 				resp.Request.Header["Cookie"] = resp.Header["Set-Cookie"]
 
-				session, err := sessionStore.Get(resp.Request, getTestConfig(t).Session.SessionKey)
+				session, err := sessionStore.Get(resp.Request, test_helpers.GetTestConfig(t).Session.SessionKey)
 				assert.NoError(t, err)
 				assert.Equal(t, tC.payload.Login, session.Values["user_login"])
 			}

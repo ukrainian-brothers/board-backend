@@ -75,6 +75,7 @@ func NewAdvert(user *user.User, title MultilingualString, description Multilingu
 	description.RemoveUnsupported()
 	advert.Details.Title = title
 	advert.Details.Description = description
+	advert.CreatedAt = time.Now()
 
 	validLanguages := 0
 	for lang := range title {

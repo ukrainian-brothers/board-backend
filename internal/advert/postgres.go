@@ -17,8 +17,8 @@ type PostgresAdvertRepository struct {
 }
 
 func NewPostgresAdvertRepository(db *gorp.DbMap) *PostgresAdvertRepository {
-	db.AddTableWithName(advertDB{}, "adverts").SetKeys(false, "id")
-	db.AddTableWithName(advertDetailsDB{}, "adverts_details").SetKeys(false, "id")
+	db.AddTableWithName(AdvertDB{}, "adverts").SetKeys(false, "id")
+	db.AddTableWithName(AdvertDetailsDB{}, "adverts_details").SetKeys(false, "id")
 
 	return &PostgresAdvertRepository{
 		db: db,
@@ -29,7 +29,7 @@ func newStringPtr(s string) *string {
 	return &s
 }
 
-type advertDB struct {
+type AdvertDB struct {
 	ID             uuid.UUID             `db:"id"`
 	UserID         uuid.UUID             `db:"user_id"`
 	Type           domain.AdvertType     `db:"type"`
@@ -40,7 +40,7 @@ type advertDB struct {
 	DestroyedAt    *time.Time            `db:"destroyed_at"`
 }
 
-type advertDetailsDB struct {
+type AdvertDetailsDB struct {
 	ID          uuid.UUID   `db:"id"`
 	AdvertID    uuid.UUID   `db:"advert_id"`
 	Language    LanguageTag `db:"language"` // ISO 639-1
@@ -48,11 +48,57 @@ type advertDetailsDB struct {
 	Description string      `db:"description"`
 }
 
+type advertTranslations struct {
+	Title       MultilingualString
+	Description MultilingualString
+}
+
+func (tr *advertTranslations) Filter(langs []LanguageTag) {
+	newTitle := make(MultilingualString)
+	newDesc := make(MultilingualString)
+	for _, expectedLang := range langs {
+		t, ok := tr.Title[expectedLang]
+		if ok {
+			newTitle[expectedLang] = t
+		}
+
+		d, ok := tr.Description[expectedLang]
+		if ok {
+			newDesc[expectedLang] = d
+		}
+	}
+	tr.Title = newTitle
+	tr.Description = newDesc
+}
+
+func (repo PostgresAdvertRepository) getAdvertTranslations(ctx context.Context, advertID uuid.UUID) (advertTranslations, error) {
+	sqlExec := repo.db.WithContext(ctx)
+	var advDetailsDB []AdvertDetailsDB
+	_, err := sqlExec.Select(&advDetailsDB, "SELECT * FROM adverts_details WHERE advert_id=$1", advertID.String())
+	if err != nil {
+		return advertTranslations{}, fmt.Errorf("failed getting advert translations: %w", err)
+	}
+
+	translation := advertTranslations{
+		Title:       make(MultilingualString),
+		Description: make(MultilingualString),
+	}
+
+	for _, val := range advDetailsDB {
+		translation.Title[val.Language] = val.Title
+		translation.Description[val.Language] = val.Description
+	}
+
+	translation.Title.RemoveUnsupported()
+	translation.Description.RemoveUnsupported()
+	return translation, nil
+}
+
 func (repo PostgresAdvertRepository) Get(ctx context.Context, id uuid.UUID) (advert.Advert, error) {
 	sqlExec := repo.db.WithContext(ctx)
 
-	type advertAndUser struct {
-		advertDB
+	type advertAndUserDB struct {
+		AdvertDB
 		ID          uuid.UUID `db:"id"`
 		Login       string    `db:"login"`
 		Password    *string   `db:"password"`
@@ -62,7 +108,7 @@ func (repo PostgresAdvertRepository) Get(ctx context.Context, id uuid.UUID) (adv
 		PhoneNumber *string   `db:"phone_number"`
 	}
 
-	adv := advertAndUser{}
+	adv := advertAndUserDB{}
 
 	err := sqlExec.SelectOne(&adv, "SELECT * FROM adverts JOIN users ON (adverts.user_id = users.id) WHERE adverts.id=$1;", id.String())
 	if err != nil {
@@ -77,27 +123,16 @@ func (repo PostgresAdvertRepository) Get(ctx context.Context, id uuid.UUID) (adv
 		return advert.Advert{}, fmt.Errorf("getting advert failed while performing NewUser() %w", err)
 	}
 
-	advertDetailsList, err := sqlExec.Select(advertDetailsDB{}, "SELECT * FROM adverts_details WHERE advert_id=$1", adv.ID)
+	translation, err := repo.getAdvertTranslations(ctx, adv.ID)
 	if err != nil {
-		return advert.Advert{}, fmt.Errorf("failed getting advert translations: %w", err)
+		return advert.Advert{}, err
 	}
-
-	multilingualTitle := make(MultilingualString)
-	multilingualDescription := make(MultilingualString)
-	for _, val := range advertDetailsList {
-		advertDetails := val.(advertDetailsDB)
-		multilingualTitle[advertDetails.Language] = advertDetails.Title
-		multilingualDescription[advertDetails.Language] = advertDetails.Description
-	}
-
-	multilingualTitle.RemoveUnsupported()
-	multilingualDescription.RemoveUnsupported()
 
 	return advert.Advert{
 		ID: adv.ID,
 		Details: domain.AdvertDetails{
-			Title:          multilingualTitle,
-			Description:    multilingualDescription,
+			Title:          translation.Title,
+			Description:    translation.Description,
 			Type:           adv.Type,
 			Views:          adv.Views,
 			ContactDetails: adv.ContactDetails,
@@ -116,7 +151,7 @@ func (repo PostgresAdvertRepository) Add(ctx context.Context, advert *advert.Adv
 	}
 	sqlExecutor := trans.WithContext(ctx)
 
-	advertDb := advertDB{
+	advertDb := AdvertDB{
 		ID:             advert.ID,
 		UserID:         advert.User.ID,
 		Type:           advert.Details.Type,
@@ -137,7 +172,7 @@ func (repo PostgresAdvertRepository) Add(ctx context.Context, advert *advert.Adv
 			continue
 		}
 
-		advertDetailsDB := advertDetailsDB{
+		advertDetailsDB := AdvertDetailsDB{
 			ID:          uuid.New(),
 			AdvertID:    advert.ID,
 			Language:    lang,
@@ -151,6 +186,53 @@ func (repo PostgresAdvertRepository) Add(ctx context.Context, advert *advert.Adv
 	}
 
 	return trans.Commit()
+}
+
+func (repo PostgresAdvertRepository) GetList(ctx context.Context, langs LanguageTags, limit int, offset int) ([]*advert.Advert, error) {
+	sqlExec := repo.db.WithContext(ctx)
+
+	var advertsDB []AdvertDB
+	_, err := sqlExec.Select(&advertsDB, "SELECT * FROM adverts LIMIT $1 OFFSET $2", limit, offset)
+	if err != nil {
+		return nil, fmt.Errorf("failed selecting many adverts with translations: %w", err)
+	}
+
+	var adverts []*advert.Advert
+	for _, advDB := range advertsDB {
+		translation, err := repo.getAdvertTranslations(ctx, advDB.ID)
+		if err != nil {
+			return nil, err
+		}
+
+		// don't filter if there are no langs selected
+		if !langs.Empty() {
+			translation.Filter(langs)
+		}
+
+		if translation.Title.Empty() || translation.Description.Empty() {
+			continue
+		}
+
+		adverts = append(adverts, &advert.Advert{
+			ID: advDB.ID,
+			Details: domain.AdvertDetails{
+				Title:       translation.Title,
+				Description: translation.Description,
+				Type:        advDB.Type,
+				Views:       advDB.Views,
+				ContactDetails: domain.ContactDetails{
+					Mail:        advDB.ContactDetails.Mail,
+					PhoneNumber: advDB.ContactDetails.PhoneNumber,
+				},
+			},
+			User:        &user.User{ID: advDB.UserID},
+			CreatedAt:   advDB.CreatedAt,
+			UpdatedAt:   advDB.UpdatedAt,
+			DestroyedAt: advDB.DestroyedAt,
+		})
+	}
+
+	return adverts, nil
 }
 
 func (repo PostgresAdvertRepository) Delete(ctx context.Context, id uuid.UUID) error {
